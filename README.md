@@ -67,6 +67,7 @@ src/
     index.ts
 docs/
   architecture.md
+  research-liquid-glass.md
   shader.md
   tuning.md
   moderation-guide.md
@@ -144,6 +145,7 @@ The component owns a hidden video element and a canvas. The renderer owns the Th
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Research: Liquid Glass Over Video](docs/research-liquid-glass.md)
 - [Shader](docs/shader.md)
 - [Tuning](docs/tuning.md)
 - [Moderation Guide](docs/moderation-guide.md)

@@ -1,5 +1,7 @@
 # Architecture
 
+Before changing the renderer, read [Research: Liquid Glass Over Video](research-liquid-glass.md). It contains the source link, formulas, optical model, and QA rules behind this lab.
+
 The project has three layers.
 
 ## 1. React Shell
