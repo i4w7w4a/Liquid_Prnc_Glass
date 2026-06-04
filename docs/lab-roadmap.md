@@ -49,14 +49,17 @@ Implemented settings:
 
 - `fieldEnabled`;
 - `fieldStart`;
+- `fieldSoftness`;
 - `fieldCurve`;
 - `fieldStrength`.
 
 Shader field:
 
 ```glsl
-edgeTravel = max(abs(x) / halfWidth, abs(y) / halfHeight)
-fieldMask = pow(smoothstep(fieldStart, 1.0, edgeTravel), fieldCurve)
+ellipseTravel = length(normalizedCenter)
+rectTravel = max(normalizedCenter.x, normalizedCenter.y)
+edgeTravel = mix(ellipseTravel, rectTravel, edgeBlend * 0.16)
+fieldMask = pow(softRamp * longRamp, fieldCurve)
 ```
 
 This keeps the center quiet and grows refraction toward the image bounds.

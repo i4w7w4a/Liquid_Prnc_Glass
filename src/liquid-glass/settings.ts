@@ -6,6 +6,7 @@ export type LiquidGlassSettingKey =
   | 'edgeDarkening'
   | 'highlightStrength'
   | 'fieldStart'
+  | 'fieldSoftness'
   | 'fieldCurve'
   | 'fieldStrength'
   | 'pixelRatio'
@@ -37,6 +38,7 @@ const liquidGlassSettingKeys: LiquidGlassSettingKey[] = [
 
 const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
   'fieldStart',
+  'fieldSoftness',
   'fieldCurve',
   'fieldStrength',
 ]
@@ -51,6 +53,7 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   edgeDarkening: 0.34,
   highlightStrength: 0.72,
   fieldStart: 0.22,
+  fieldSoftness: 0.42,
   fieldCurve: 2.4,
   fieldStrength: 1,
   pixelRatio: 2,
@@ -122,6 +125,15 @@ export const liquidGlassControls: LiquidGlassControl[] = [
     help: 'Clean center radius before the invisible field begins to grow.',
   },
   {
+    key: 'fieldSoftness',
+    label: 'Field softness',
+    min: 0.08,
+    max: 0.9,
+    step: 0.01,
+    section: 'field',
+    help: 'Feather width that dissolves the field into the video background.',
+  },
+  {
     key: 'fieldCurve',
     label: 'Field curve',
     min: 0.45,
@@ -151,7 +163,12 @@ export const liquidGlassControls: LiquidGlassControl[] = [
 ]
 
 export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number) {
-  if (key === 'edgeThickness' || key === 'cornerRadius' || key === 'fieldStart') {
+  if (
+    key === 'edgeThickness' ||
+    key === 'cornerRadius' ||
+    key === 'fieldStart' ||
+    key === 'fieldSoftness'
+  ) {
     return `${(value * 100).toFixed(1)}%`
   }
 

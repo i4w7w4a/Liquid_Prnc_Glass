@@ -36,6 +36,7 @@ uniform float uEdgeDarkening;
 uniform float uHighlightStrength;
 uniform float uFieldEnabled;
 uniform float uFieldStart;
+uniform float uFieldSoftness;
 uniform float uFieldCurve;
 uniform float uFieldStrength;
 
@@ -85,25 +86,27 @@ void main() {
 
   if (uFieldEnabled > 0.5) {
     vec2 centerVector = (vUv - 0.5) * aspectCorrection;
-    float edgeTravel = max(
+    vec2 normalizedCenter = vec2(
       abs(centerVector.x) / max(0.5 * aspect, 0.001),
       abs(centerVector.y) / 0.5
     );
+    float ellipseTravel = length(normalizedCenter);
+    float rectTravel = max(normalizedCenter.x, normalizedCenter.y);
+    float edgeBlend = smoothstep(0.72, 1.18, ellipseTravel);
+    float edgeTravel = mix(ellipseTravel, rectTravel, edgeBlend * 0.16);
     float fieldStart = clamp(uFieldStart, 0.0, 0.9);
-    float fieldMask = smoothstep(fieldStart, 1.0, edgeTravel);
-    fieldMask = pow(fieldMask, clamp(uFieldCurve, 0.35, 6.0));
-
-    if (fieldMask < 0.0005) {
-      gl_FragColor = vec4(sampleVideo(vUv), 1.0);
-      return;
-    }
+    float fieldSoftness = clamp(uFieldSoftness, 0.04, 1.0);
+    float fieldEnd = min(1.22, fieldStart + fieldSoftness);
+    float softRamp = smoothstep(fieldStart, max(fieldStart + 0.02, fieldEnd), edgeTravel);
+    float longRamp = smoothstep(max(0.0, fieldStart - fieldSoftness * 0.45), 1.18, edgeTravel);
+    float fieldMask = pow(softRamp * longRamp, clamp(uFieldCurve, 0.35, 6.0));
 
     vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
     float fieldStrength = clamp(uFieldStrength, 0.0, 2.5);
     float pull = (uIOR - 1.0) * fieldMask * fieldStrength * (0.055 + thickness * 0.38);
     vec2 refractOffset = normal * pull / aspectCorrection;
     vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
-    float edgeMask = smoothstep(max(fieldStart + 0.08, 0.42), 1.0, edgeTravel) * fieldMask;
+    float edgeMask = smoothstep(max(fieldStart + fieldSoftness * 0.65, 0.52), 1.2, edgeTravel) * fieldMask;
     float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * edgeMask;
     float lowerLip = smoothstep(0.58, 1.0, vUv.y) * edgeMask;
     float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.05 + vUv.y * 0.26))) * edgeMask;
@@ -198,6 +201,7 @@ export class WebGLVideoEdgeGlassRenderer {
         uEdgeDarkening: { value: settings.edgeDarkening },
         uFieldCurve: { value: settings.fieldCurve },
         uFieldEnabled: { value: settings.fieldEnabled ? 1 : 0 },
+        uFieldSoftness: { value: settings.fieldSoftness },
         uFieldStart: { value: settings.fieldStart },
         uFieldStrength: { value: settings.fieldStrength },
         uHighlightStrength: { value: settings.highlightStrength },
@@ -248,6 +252,7 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uEdgeDarkening.value = settings.edgeDarkening
     this.material.uniforms.uFieldCurve.value = settings.fieldCurve
     this.material.uniforms.uFieldEnabled.value = settings.fieldEnabled ? 1 : 0
+    this.material.uniforms.uFieldSoftness.value = settings.fieldSoftness
     this.material.uniforms.uFieldStart.value = settings.fieldStart
     this.material.uniforms.uFieldStrength.value = settings.fieldStrength
     this.material.uniforms.uHighlightStrength.value = settings.highlightStrength

@@ -71,22 +71,29 @@ field mode -> invisible center + smooth center-to-edge refraction
 Field mode uses normalized rectangular travel from the center toward the image bounds:
 
 ```glsl
-float edgeTravel = max(
+vec2 normalizedCenter = vec2(
   abs(centerVector.x) / max(0.5 * aspect, 0.001),
   abs(centerVector.y) / 0.5
 );
+float ellipseTravel = length(normalizedCenter);
+float rectTravel = max(normalizedCenter.x, normalizedCenter.y);
+float edgeTravel = mix(ellipseTravel, rectTravel, edgeBlend * 0.16);
 ```
 
 Then it turns that travel into a mask:
 
 ```glsl
-float fieldMask = smoothstep(uFieldStart, 1.0, edgeTravel);
+float fieldEnd = min(1.22, uFieldStart + uFieldSoftness);
+float softRamp = smoothstep(uFieldStart, fieldEnd, edgeTravel);
+float longRamp = smoothstep(uFieldStart - uFieldSoftness * 0.45, 1.18, edgeTravel);
+float fieldMask = softRamp * longRamp;
 fieldMask = pow(fieldMask, uFieldCurve);
 ```
 
 Meaning:
 
 - `uFieldStart` protects the clean center;
+- `uFieldSoftness` feathers the effect into the source video;
 - `smoothstep()` avoids a hard visible seam;
 - `uFieldCurve` controls how gently the effect wakes up;
 - `uFieldStrength` controls the final refraction pull.

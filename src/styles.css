@@ -38,6 +38,10 @@ input {
   font: inherit;
 }
 
+button {
+  text-transform: uppercase;
+}
+
 .app-shell {
   position: fixed;
   inset: 0;
@@ -106,12 +110,52 @@ input {
   border-bottom: 1px solid rgba(197, 254, 207, 0.14);
 }
 
+.control-panel__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .control-panel__head p {
   margin: 0;
   color: #d7ffe0;
   font-size: 13px;
   line-height: 1;
   text-shadow: 0 0 14px rgba(197, 254, 207, 0.22);
+}
+
+.language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.language-toggle button {
+  display: grid;
+  width: 28px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid rgba(177, 106, 255, 0.48);
+  color: rgba(230, 212, 255, 0.78);
+  background:
+    linear-gradient(180deg, rgba(139, 79, 255, 0.18), rgba(58, 20, 116, 0.28)),
+    rgba(5, 2, 12, 0.7);
+  box-shadow: 0 0 18px rgba(143, 71, 255, 0.16);
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.language-toggle button[aria-pressed="true"] {
+  border-color: rgba(203, 163, 255, 0.92);
+  color: #f1e9ff;
+  background:
+    linear-gradient(180deg, rgba(170, 104, 255, 0.36), rgba(83, 31, 160, 0.42)),
+    rgba(10, 2, 22, 0.86);
+  box-shadow:
+    0 0 18px rgba(154, 87, 255, 0.38),
+    inset 0 0 0 1px rgba(244, 235, 255, 0.1);
 }
 
 .control-panel__head span,

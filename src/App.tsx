@@ -12,16 +12,168 @@ import {
 } from './liquid-glass'
 import type { LiquidGlassSettingKey, LiquidGlassSettings } from './liquid-glass'
 
+type Language = 'en' | 'ru'
+
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
 
+const uiCopy = {
+  en: {
+    coreOptics: 'Core optics',
+    centerField: 'Center field',
+    copy: 'Copy',
+    copied: 'Copied',
+    currentPreset: 'Current preset',
+    enableField: 'Enable center-to-edge field',
+    fieldHidden: 'Field controls are hidden until enabled.',
+    fieldHint: 'The center stays clean; refraction dissolves into the video by curve.',
+    failed: 'Failed',
+    import: 'Import',
+    imported: 'Imported',
+    invalid: 'Invalid',
+    reset: 'Reset',
+    subtitle: 'WebGL / VideoTexture / SDF / GLSL',
+  },
+  ru: {
+    coreOptics: 'Оптика',
+    centerField: 'Поле от центра',
+    copy: 'Копия',
+    copied: 'Скопировано',
+    currentPreset: 'Текущий пресет',
+    enableField: 'Включить поле от центра к краю',
+    fieldHidden: 'Настройки поля скрыты, пока режим выключен.',
+    fieldHint: 'Центр остается чистым; преломление растворяется в видео по кривой.',
+    failed: 'Ошибка',
+    import: 'Импорт',
+    imported: 'Импортировано',
+    invalid: 'Неверно',
+    reset: 'Сброс',
+    subtitle: 'WebGL / VideoTexture / SDF / GLSL',
+  },
+} satisfies Record<Language, Record<string, string>>
+
+const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string; label: string }>> = {
+  ior: {
+    en: {
+      label: 'IOR',
+      help: 'Optical strength. Raise slowly; high values bend the edge aggressively.',
+    },
+    ru: {
+      label: 'IOR',
+      help: 'Оптическая сила. Поднимай медленно; высокие значения резко гнут край.',
+    },
+  },
+  edgeThickness: {
+    en: {
+      label: 'Edge thickness',
+      help: 'Normalized width of the refractive border zone.',
+    },
+    ru: {
+      label: 'Толщина края',
+      help: 'Нормализованная ширина зоны преломления по краю.',
+    },
+  },
+  cornerRadius: {
+    en: {
+      label: 'Corner radius',
+      help: 'SDF corner rounding. Keep low for a sharp cinematic video window.',
+    },
+    ru: {
+      label: 'Скругление',
+      help: 'SDF-скругление углов. Держи низко для резкого киношного окна.',
+    },
+  },
+  dispersion: {
+    en: {
+      label: 'Dispersion',
+      help: 'RGB channel split along the edge normal. Use with restraint.',
+    },
+    ru: {
+      label: 'Дисперсия',
+      help: 'Разделение RGB-каналов по нормали края. Используй сдержанно.',
+    },
+  },
+  edgeDarkening: {
+    en: {
+      label: 'Edge darkening',
+      help: 'Simulates light absorption through thicker glass.',
+    },
+    ru: {
+      label: 'Затемнение края',
+      help: 'Имитирует поглощение света в более толстом стекле.',
+    },
+  },
+  highlightStrength: {
+    en: {
+      label: 'Highlight strength',
+      help: 'Rim, lower lip and sweep highlight intensity.',
+    },
+    ru: {
+      label: 'Сила блика',
+      help: 'Интенсивность обода, нижней кромки и скользящего блика.',
+    },
+  },
+  fieldStart: {
+    en: {
+      label: 'Field start',
+      help: 'Clean center radius before the invisible field begins to grow.',
+    },
+    ru: {
+      label: 'Старт поля',
+      help: 'Чистый радиус центра до начала невидимого роста поля.',
+    },
+  },
+  fieldSoftness: {
+    en: {
+      label: 'Field softness',
+      help: 'Feather width that dissolves the field into the video background.',
+    },
+    ru: {
+      label: 'Мягкость вреза',
+      help: 'Ширина растушевки, которая растворяет поле в фоне видео.',
+    },
+  },
+  fieldCurve: {
+    en: {
+      label: 'Field curve',
+      help: 'Power curve for how gently the field emerges from the center.',
+    },
+    ru: {
+      label: 'Кривая поля',
+      help: 'Степенная кривая того, насколько мягко поле выходит из центра.',
+    },
+  },
+  fieldStrength: {
+    en: {
+      label: 'Field strength',
+      help: 'Multiplier for full-frame center-to-edge refraction.',
+    },
+    ru: {
+      label: 'Сила поля',
+      help: 'Множитель преломления от центра к краям всего кадра.',
+    },
+  },
+  pixelRatio: {
+    en: {
+      label: 'Pixel ratio',
+      help: 'GPU render scale. 2 is high-end; 3 is a stress setting.',
+    },
+    ru: {
+      label: 'Pixel ratio',
+      help: 'Масштаб GPU-рендера. 2 — качественный режим, 3 — стресс.',
+    },
+  },
+}
+
 function App() {
+  const [language, setLanguage] = useState<Language>('en')
   const [settings, setSettings] = useState<LiquidGlassSettings>(defaultLiquidGlassSettings)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [importState, setImportState] = useState<'idle' | 'imported' | 'invalid'>('idle')
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
   const presetJson = useMemo(() => serializeLiquidGlassPreset(activeSettings), [activeSettings])
   const [presetDraft, setPresetDraft] = useState(presetJson)
+  const copy = uiCopy[language]
 
   useEffect(() => {
     setPresetDraft(presetJson)
@@ -82,20 +234,36 @@ function App() {
       </section>
       <aside className="control-panel" aria-label="Glass controls">
         <div className="control-panel__head">
-          <p>Liquid_Prnc_Glass</p>
-          <span>WebGL / VideoTexture / SDF / GLSL</span>
+          <div className="control-panel__title-row">
+            <p>Liquid_Prnc_Glass</p>
+            <div className="language-toggle" aria-label="Language">
+              {(['en', 'ru'] as Language[]).map((item) => (
+                <button
+                  aria-pressed={language === item}
+                  key={item}
+                  onClick={() => setLanguage(item)}
+                  title={item === 'en' ? 'English' : 'Русский'}
+                  type="button"
+                >
+                  {item.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+          <span>{copy.subtitle}</span>
         </div>
         <div className="control-panel__controls">
           <details className="control-group" open>
-            <summary>Core optics</summary>
+            <summary>{copy.coreOptics}</summary>
             {coreControls.map((control) => {
               const inputId = `glass-${control.key}`
+              const text = controlCopy[control.key][language]
 
               return (
                 <div className="glass-control" key={control.key}>
                   <span className="glass-control__row">
-                    <label htmlFor={inputId} title={control.help}>
-                      {control.label}
+                    <label htmlFor={inputId} title={text.help}>
+                      {text.label}
                     </label>
                     <output aria-hidden="true" htmlFor={inputId}>
                       {formatLiquidGlassValue(control.key, activeSettings[control.key])}
@@ -112,33 +280,34 @@ function App() {
                     type="range"
                     value={activeSettings[control.key]}
                   />
-                  <small>{control.help}</small>
+                  <small>{text.help}</small>
                 </div>
               )
             })}
           </details>
           <details className="control-group" open>
-            <summary>Center field</summary>
+            <summary>{copy.centerField}</summary>
             <label className="field-toggle">
               <input
-              checked={activeSettings.fieldEnabled}
+                checked={activeSettings.fieldEnabled}
                 onChange={(event) => handleFieldEnabledChange(event.currentTarget.checked)}
                 type="checkbox"
               />
-              <span>Enable center-to-edge field</span>
+              <span>{copy.enableField}</span>
             </label>
             <small className="field-toggle__hint">
-              The center stays clean; refraction grows by curve toward the image edge.
+              {copy.fieldHint}
             </small>
             {activeSettings.fieldEnabled ? (
               fieldControls.map((control) => {
                 const inputId = `glass-${control.key}`
+                const text = controlCopy[control.key][language]
 
                 return (
                   <div className="glass-control" key={control.key}>
                     <span className="glass-control__row">
-                      <label htmlFor={inputId} title={control.help}>
-                        {control.label}
+                      <label htmlFor={inputId} title={text.help}>
+                        {text.label}
                       </label>
                       <output aria-hidden="true" htmlFor={inputId}>
                         {formatLiquidGlassValue(control.key, activeSettings[control.key])}
@@ -155,27 +324,35 @@ function App() {
                       type="range"
                       value={activeSettings[control.key]}
                     />
-                    <small>{control.help}</small>
+                    <small>{text.help}</small>
                   </div>
                 )
               })
             ) : (
-              <p className="control-group__empty">Field controls are hidden until enabled.</p>
+              <p className="control-group__empty">{copy.fieldHidden}</p>
             )}
           </details>
         </div>
         <div className="preset-box">
           <div className="preset-box__head">
-            <span>Current preset</span>
+            <span>{copy.currentPreset}</span>
             <span className="preset-box__actions">
               <button onClick={importPreset} type="button">
-                {importState === 'imported' ? 'Imported' : importState === 'invalid' ? 'Invalid' : 'Import'}
+                {importState === 'imported'
+                  ? copy.imported
+                  : importState === 'invalid'
+                    ? copy.invalid
+                    : copy.import}
               </button>
               <button onClick={resetPreset} type="button">
-                Reset
+                {copy.reset}
               </button>
               <button onClick={copyPreset} type="button">
-                {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Failed' : 'Copy'}
+                {copyState === 'copied'
+                  ? copy.copied
+                  : copyState === 'failed'
+                    ? copy.failed
+                    : copy.copy}
               </button>
             </span>
           </div>

@@ -21,6 +21,7 @@ describe('liquid glass settings', () => {
   it('keeps the center-to-edge field disabled by default', () => {
     expect(defaultLiquidGlassSettings.fieldEnabled).toBe(false)
     expect(defaultLiquidGlassSettings.fieldStart).toBe(0.22)
+    expect(defaultLiquidGlassSettings.fieldSoftness).toBe(0.42)
     expect(defaultLiquidGlassSettings.fieldCurve).toBe(2.4)
     expect(defaultLiquidGlassSettings.fieldStrength).toBe(1)
   })
@@ -46,6 +47,7 @@ describe('liquid glass settings', () => {
 
     expect(parsedPreset.fieldEnabled).toBe(false)
     expect(parsedPreset.fieldStart).toBe(defaultLiquidGlassSettings.fieldStart)
+    expect(parsedPreset.fieldSoftness).toBe(defaultLiquidGlassSettings.fieldSoftness)
     expect(parsedPreset.fieldCurve).toBe(defaultLiquidGlassSettings.fieldCurve)
     expect(parsedPreset.fieldStrength).toBe(defaultLiquidGlassSettings.fieldStrength)
   })
@@ -64,6 +66,7 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.ior).toBe(1.3)
     expect(normalizedSettings.fieldEnabled).toBe(false)
     expect(normalizedSettings.fieldStart).toBe(defaultLiquidGlassSettings.fieldStart)
+    expect(normalizedSettings.fieldSoftness).toBe(defaultLiquidGlassSettings.fieldSoftness)
   })
 
   it('rejects presets with missing settings', () => {
@@ -84,11 +87,11 @@ describe('liquid glass settings', () => {
   it('rejects center-to-edge field values outside control ranges', () => {
     const unsafePreset = {
       ...defaultLiquidGlassSettings,
-      fieldStrength: 4,
+      fieldSoftness: 2,
     }
 
     expect(() => parseLiquidGlassPreset(JSON.stringify(unsafePreset))).toThrow(
-      'Setting out of range: fieldStrength',
+      'Setting out of range: fieldSoftness',
     )
   })
 })
