@@ -25,6 +25,12 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.fieldFadeMode).toBe(0)
     expect(defaultLiquidGlassSettings.fieldCurve).toBe(2.4)
     expect(defaultLiquidGlassSettings.fieldStrength).toBe(1)
+    expect(defaultLiquidGlassSettings.regionTop).toBe(true)
+    expect(defaultLiquidGlassSettings.regionRight).toBe(true)
+    expect(defaultLiquidGlassSettings.regionBottom).toBe(true)
+    expect(defaultLiquidGlassSettings.regionLeft).toBe(true)
+    expect(defaultLiquidGlassSettings.regionWidth).toBe(1)
+    expect(defaultLiquidGlassSettings.regionSoftness).toBe(0.12)
   })
 
   it('formats signed IOR values', () => {
@@ -56,6 +62,12 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.fieldFadeMode).toBe(defaultLiquidGlassSettings.fieldFadeMode)
     expect(parsedPreset.fieldCurve).toBe(defaultLiquidGlassSettings.fieldCurve)
     expect(parsedPreset.fieldStrength).toBe(defaultLiquidGlassSettings.fieldStrength)
+    expect(parsedPreset.regionTop).toBe(defaultLiquidGlassSettings.regionTop)
+    expect(parsedPreset.regionRight).toBe(defaultLiquidGlassSettings.regionRight)
+    expect(parsedPreset.regionBottom).toBe(defaultLiquidGlassSettings.regionBottom)
+    expect(parsedPreset.regionLeft).toBe(defaultLiquidGlassSettings.regionLeft)
+    expect(parsedPreset.regionWidth).toBe(defaultLiquidGlassSettings.regionWidth)
+    expect(parsedPreset.regionSoftness).toBe(defaultLiquidGlassSettings.regionSoftness)
   })
 
   it('normalizes persisted settings with missing field controls', () => {
@@ -74,6 +86,8 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.fieldStart).toBe(defaultLiquidGlassSettings.fieldStart)
     expect(normalizedSettings.fieldSoftness).toBe(defaultLiquidGlassSettings.fieldSoftness)
     expect(normalizedSettings.fieldFadeMode).toBe(defaultLiquidGlassSettings.fieldFadeMode)
+    expect(normalizedSettings.regionTop).toBe(defaultLiquidGlassSettings.regionTop)
+    expect(normalizedSettings.regionWidth).toBe(defaultLiquidGlassSettings.regionWidth)
   })
 
   it('parses signed IOR values', () => {
@@ -122,5 +136,46 @@ describe('liquid glass settings', () => {
     expect(() => parseLiquidGlassPreset(JSON.stringify(unsafePreset))).toThrow(
       'Setting out of range: fieldFadeMode',
     )
+  })
+
+  it('parses side region masks and strip shaping controls', () => {
+    const parsedPreset = parseLiquidGlassPreset(
+      JSON.stringify({
+        ...defaultLiquidGlassSettings,
+        regionTop: true,
+        regionRight: false,
+        regionBottom: true,
+        regionLeft: false,
+        regionWidth: 0.32,
+        regionSoftness: 0.18,
+      }),
+    )
+
+    expect(parsedPreset.regionTop).toBe(true)
+    expect(parsedPreset.regionRight).toBe(false)
+    expect(parsedPreset.regionBottom).toBe(true)
+    expect(parsedPreset.regionLeft).toBe(false)
+    expect(parsedPreset.regionWidth).toBe(0.32)
+    expect(parsedPreset.regionSoftness).toBe(0.18)
+  })
+
+  it('rejects invalid side region controls', () => {
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          regionWidth: 2,
+        }),
+      ),
+    ).toThrow('Setting out of range: regionWidth')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          regionTop: 1,
+        }),
+      ),
+    ).toThrow('Invalid setting: regionTop')
   })
 })

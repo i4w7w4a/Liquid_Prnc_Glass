@@ -1,32 +1,61 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { WebGLVideoEdgeGlassRenderer } from './WebGLVideoEdgeGlassRenderer'
 import type { LiquidGlassSettings } from './settings'
+import { resolveNaturalSourceSize } from './sourceLayout'
+import type { SourceSize } from './sourceLayout'
 
-type WebGLVideoEdgeGlassProps = {
-  className?: string
-  poster: string
-  settings: LiquidGlassSettings
+export type LiquidGlassSource = {
+  kind: 'image' | 'video'
+  name: string
+  poster?: string
   src: string
 }
 
-export function WebGLVideoEdgeGlass({ className, poster, settings, src }: WebGLVideoEdgeGlassProps) {
+type WebGLVideoEdgeGlassProps = {
+  className?: string
+  onNaturalSizeChange?: (size: SourceSize) => void
+  settings: LiquidGlassSettings
+  source: LiquidGlassSource
+  sourceNaturalSize: SourceSize
+  style?: CSSProperties
+}
+
+export function WebGLVideoEdgeGlass({
+  className,
+  onNaturalSizeChange,
+  settings,
+  source,
+  sourceNaturalSize,
+  style,
+}: WebGLVideoEdgeGlassProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const initialSettingsRef = useRef(settings)
+  const imageRef = useRef<HTMLImageElement>(null)
   const rendererRef = useRef<WebGLVideoEdgeGlassRenderer | null>(null)
+  const settingsRef = useRef(settings)
+  const sourceKey = `${source.kind}:${source.src}`
+  const [readySourceKey, setReadySourceKey] = useState<string | null>(null)
+  const sourceReady = readySourceKey === sourceKey
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    const video = videoRef.current
+    settingsRef.current = settings
+    rendererRef.current?.updateSettings(settings)
+  }, [settings])
 
-    if (!canvas || !video) {
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const sourceElement = source.kind === 'video' ? videoRef.current : imageRef.current
+
+    if (!canvas || !sourceElement || !sourceReady) {
       return undefined
     }
 
     const renderer = new WebGLVideoEdgeGlassRenderer({
       canvas,
-      settings: initialSettingsRef.current,
-      video,
+      settings: settingsRef.current,
+      source: sourceElement,
+      sourceNaturalSize,
     })
     rendererRef.current = renderer
     renderer.start()
@@ -35,26 +64,71 @@ export function WebGLVideoEdgeGlass({ className, poster, settings, src }: WebGLV
       renderer.dispose()
       rendererRef.current = null
     }
-  }, [src])
+  }, [source.kind, source.src, sourceReady])
 
   useEffect(() => {
-    rendererRef.current?.updateSettings(settings)
-  }, [settings])
+    rendererRef.current?.updateSourceNaturalSize(sourceNaturalSize)
+  }, [sourceNaturalSize])
+
+  const publishImageSize = () => {
+    const image = imageRef.current
+
+    if (!image) {
+      return
+    }
+
+    onNaturalSizeChange?.(
+      resolveNaturalSourceSize({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      }),
+    )
+    setReadySourceKey(sourceKey)
+  }
+
+  const publishVideoSize = () => {
+    const video = videoRef.current
+
+    if (!video) {
+      return
+    }
+
+    onNaturalSizeChange?.(
+      resolveNaturalSourceSize({
+        width: video.videoWidth,
+        height: video.videoHeight,
+      }),
+    )
+  }
 
   return (
-    <div className={`webgl-video-edge-glass${className ? ` ${className}` : ''}`}>
-      <video
-        aria-hidden="true"
-        className="webgl-video-edge-glass__source"
-        data-webgl-video-source="demo"
-        loop
-        muted
-        playsInline
-        poster={poster}
-        preload="auto"
-        ref={videoRef}
-        src={src}
-      />
+    <div className={`webgl-video-edge-glass${className ? ` ${className}` : ''}`} style={style}>
+      {source.kind === 'video' ? (
+        <video
+          aria-hidden="true"
+          className="webgl-video-edge-glass__source"
+          data-webgl-source-kind={source.kind}
+          loop
+          muted
+          onLoadedData={() => setReadySourceKey(sourceKey)}
+          onLoadedMetadata={publishVideoSize}
+          playsInline
+          poster={source.poster}
+          preload="auto"
+          ref={videoRef}
+          src={source.src}
+        />
+      ) : (
+        <img
+          alt=""
+          aria-hidden="true"
+          className="webgl-video-edge-glass__source"
+          data-webgl-source-kind={source.kind}
+          onLoad={publishImageSize}
+          ref={imageRef}
+          src={source.src}
+        />
+      )}
       <canvas
         aria-hidden="true"
         className="webgl-video-edge-glass__canvas"

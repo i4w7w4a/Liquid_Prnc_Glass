@@ -9,9 +9,16 @@ export type LiquidGlassSettingKey =
   | 'fieldSoftness'
   | 'fieldCurve'
   | 'fieldStrength'
+  | 'regionWidth'
+  | 'regionSoftness'
   | 'pixelRatio'
 
-export type LiquidGlassBooleanSettingKey = 'fieldEnabled'
+export type LiquidGlassBooleanSettingKey =
+  | 'fieldEnabled'
+  | 'regionTop'
+  | 'regionRight'
+  | 'regionBottom'
+  | 'regionLeft'
 export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode'
 
 export type LiquidGlassSettings = Record<LiquidGlassSettingKey, number> &
@@ -24,7 +31,7 @@ export type LiquidGlassControl = {
   label: string
   max: number
   min: number
-  section: 'core' | 'field'
+  section: 'core' | 'field' | 'region'
   step: number
 }
 
@@ -43,9 +50,17 @@ const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
   'fieldSoftness',
   'fieldCurve',
   'fieldStrength',
+  'regionWidth',
+  'regionSoftness',
 ]
 
-const liquidGlassBooleanSettingKeys: LiquidGlassBooleanSettingKey[] = ['fieldEnabled']
+const liquidGlassBooleanSettingKeys: LiquidGlassBooleanSettingKey[] = [
+  'fieldEnabled',
+  'regionTop',
+  'regionRight',
+  'regionBottom',
+  'regionLeft',
+]
 const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode']
 
 export const defaultLiquidGlassSettings: LiquidGlassSettings = {
@@ -60,6 +75,12 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   fieldFadeMode: 0,
   fieldCurve: 2.4,
   fieldStrength: 1,
+  regionTop: true,
+  regionRight: true,
+  regionBottom: true,
+  regionLeft: true,
+  regionWidth: 1,
+  regionSoftness: 0.12,
   pixelRatio: 2,
   fieldEnabled: false,
 }
@@ -164,6 +185,24 @@ export const liquidGlassControls: LiquidGlassControl[] = [
     section: 'core',
     help: 'GPU render scale. 2 is high-end; 3 is a stress setting.',
   },
+  {
+    key: 'regionWidth',
+    label: 'Region width',
+    min: 0.06,
+    max: 1,
+    step: 0.01,
+    section: 'region',
+    help: 'Width of selected top, bottom, left, or right effect strips.',
+  },
+  {
+    key: 'regionSoftness',
+    label: 'Region softness',
+    min: 0.01,
+    max: 0.35,
+    step: 0.01,
+    section: 'region',
+    help: 'Feathering at the inner edge of selected effect strips.',
+  },
 ]
 
 export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number) {
@@ -171,7 +210,9 @@ export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number
     key === 'edgeThickness' ||
     key === 'cornerRadius' ||
     key === 'fieldStart' ||
-    key === 'fieldSoftness'
+    key === 'fieldSoftness' ||
+    key === 'regionWidth' ||
+    key === 'regionSoftness'
   ) {
     return `${(value * 100).toFixed(1)}%`
   }

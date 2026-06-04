@@ -12,11 +12,11 @@ It is currently embedded as a string because this keeps the repo simple. If the 
 
 ## Core Idea
 
-The shader draws the center of the video normally and applies glass only near the edge.
+The shader draws the center of the source normally and applies glass only near the active effect region.
 
 ```txt
-center area -> clean video
-edge area   -> SDF normal -> UV refraction -> RGB dispersion -> darkening/highlight
+source center -> clean source
+active region -> SDF/field normal -> UV refraction -> RGB dispersion -> darkening/highlight
 ```
 
 ## SDF
@@ -106,7 +106,30 @@ Meaning:
 - `uFieldCurve` controls how gently the effect wakes up;
 - `uFieldStrength` controls the final refraction pull.
 
-Field mode still samples the same video texture. It changes the refraction field, not the media pipeline.
+Field mode still samples the same source texture. It changes the refraction field, not the media pipeline.
+
+## Effect Regions
+
+The shader can limit the optical effect to selected edge strips:
+
+```txt
+top / right / bottom / left
+```
+
+The region mask is computed from the distance to each selected edge:
+
+```glsl
+float regionMask = effectRegionMask(vUv);
+```
+
+Then it is applied to the real optical masks:
+
+```glsl
+masterFade *= regionMask; // field mode
+borderMask *= regionMask; // SDF edge mode
+```
+
+This is deliberate. Region selection must affect refraction, dispersion, darkening, and highlights together. Applying it only at the end can leave visible optical leftovers.
 
 ## Dispersion
 

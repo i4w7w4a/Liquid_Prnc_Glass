@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ChangeEvent, CSSProperties } from 'react'
 import demoPoster from './assets/demo-poster.png'
 import demoVideo from './assets/demo-video.web.mp4'
 import {
@@ -9,18 +10,43 @@ import {
   liquidGlassControls,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
+  resizeSourceFrameWithAspect,
+  resolveNaturalSourceSize,
   serializeLiquidGlassPreset,
 } from './liquid-glass'
 import type {
+  LiquidGlassBooleanSettingKey,
   LiquidGlassDiscreteSettingKey,
+  LiquidGlassSource,
   LiquidGlassSettingKey,
   LiquidGlassSettings,
+  SourceSize,
 } from './liquid-glass'
 
 type Language = 'en' | 'ru'
+type SourceFrameMode = 'manual' | 'natural' | 'viewport'
+type RegionKey = Extract<
+  LiquidGlassBooleanSettingKey,
+  'regionBottom' | 'regionLeft' | 'regionRight' | 'regionTop'
+>
+type RegionToggleCopyKey = 'regionBottom' | 'regionLeft' | 'regionRight' | 'regionTop'
+type RegionPresetCopyKey =
+  | 'regionAll'
+  | 'regionBottomOnly'
+  | 'regionSides'
+  | 'regionTopBottom'
+  | 'regionTopOnly'
 
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
+const regionControls = liquidGlassControls.filter((control) => control.section === 'region')
+const defaultSourceSize: SourceSize = { width: 1280, height: 720 }
+const defaultGlassSource: LiquidGlassSource = {
+  kind: 'video',
+  name: 'Demo source',
+  poster: demoPoster,
+  src: demoVideo,
+}
 const fieldFadeOptions: {
   copyKey: 'fadeMask' | 'fadeDissolve'
   value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]
@@ -28,6 +54,34 @@ const fieldFadeOptions: {
   { value: 0, copyKey: 'fadeMask' },
   { value: 1, copyKey: 'fadeDissolve' },
 ]
+const regionToggleOptions: { copyKey: RegionToggleCopyKey; key: RegionKey }[] = [
+  { key: 'regionTop', copyKey: 'regionTop' },
+  { key: 'regionRight', copyKey: 'regionRight' },
+  { key: 'regionBottom', copyKey: 'regionBottom' },
+  { key: 'regionLeft', copyKey: 'regionLeft' },
+]
+const regionPresetOptions = [
+  {
+    copyKey: 'regionAll',
+    edges: { regionTop: true, regionRight: true, regionBottom: true, regionLeft: true },
+  },
+  {
+    copyKey: 'regionTopBottom',
+    edges: { regionTop: true, regionRight: false, regionBottom: true, regionLeft: false },
+  },
+  {
+    copyKey: 'regionSides',
+    edges: { regionTop: false, regionRight: true, regionBottom: false, regionLeft: true },
+  },
+  {
+    copyKey: 'regionTopOnly',
+    edges: { regionTop: true, regionRight: false, regionBottom: false, regionLeft: false },
+  },
+  {
+    copyKey: 'regionBottomOnly',
+    edges: { regionTop: false, regionRight: false, regionBottom: true, regionLeft: false },
+  },
+] satisfies { copyKey: RegionPresetCopyKey; edges: Record<RegionKey, boolean> }[]
 
 const uiCopy = {
   en: {
@@ -38,20 +92,41 @@ const uiCopy = {
     copy: 'Copy',
     copied: 'Copied',
     currentPreset: 'Current preset',
+    demoSource: 'Demo',
     enableField: 'Enable center-to-edge field',
+    effectRegions: 'Effect regions',
     fadeDissolve: 'Source dissolve',
     fadeMask: 'Optical mask',
     fadeMethod: 'Fade method',
     fieldHidden: 'Field controls are hidden until enabled.',
-    fieldHint: 'The center stays clean; refraction dissolves into the video by curve.',
+    fieldHint: 'The center stays clean; refraction dissolves into the source by curve.',
     failed: 'Failed',
     import: 'Import',
     imported: 'Imported',
     integrationBrief: 'Integration brief',
     invalid: 'Invalid',
+    lockAspect: 'Lock aspect',
+    manualSize: 'Manual',
+    naturalSize: 'Natural',
     preset: 'Preset',
+    regionAll: 'All',
+    regionBottom: 'Bottom',
+    regionBottomOnly: 'Bottom',
+    regionLeft: 'Left',
+    regionRight: 'Right',
+    regionSides: 'Sides',
+    regionTop: 'Top',
+    regionTopBottom: 'Top + bottom',
+    regionTopOnly: 'Top',
     reset: 'Reset',
-    subtitle: 'WebGL / VideoTexture / SDF / GLSL',
+    source: 'Source',
+    sourceHint: 'Upload an image or a moving source. Demo stays available.',
+    sourceKindImage: 'Image',
+    sourceKindVideo: 'Motion',
+    sourceSize: 'Source size',
+    subtitle: 'WebGL / SourceTexture / SDF / GLSL',
+    uploadSource: 'Upload',
+    viewportSize: 'Viewport',
   },
   ru: {
     coreOptics: 'Оптика',
@@ -61,20 +136,41 @@ const uiCopy = {
     copy: 'Копия',
     copied: 'Скопировано',
     currentPreset: 'Текущий пресет',
+    demoSource: 'Демо',
     enableField: 'Включить поле от центра к краю',
+    effectRegions: 'Зоны эффекта',
     fadeDissolve: 'Растворение в исходник',
     fadeMask: 'Оптическая маска',
     fadeMethod: 'Метод затухания',
     fieldHidden: 'Настройки поля скрыты, пока режим выключен.',
-    fieldHint: 'Центр остается чистым; преломление растворяется в видео по кривой.',
+    fieldHint: 'Центр остается чистым; преломление растворяется в исходнике по кривой.',
     failed: 'Ошибка',
     import: 'Импорт',
     imported: 'Импортировано',
     integrationBrief: 'ТЗ для агента',
     invalid: 'Неверно',
+    lockAspect: 'Держать пропорции',
+    manualSize: 'Вручную',
+    naturalSize: 'Натуральный',
     preset: 'Пресет',
+    regionAll: 'Все',
+    regionBottom: 'Низ',
+    regionBottomOnly: 'Низ',
+    regionLeft: 'Лево',
+    regionRight: 'Право',
+    regionSides: 'Бока',
+    regionTop: 'Верх',
+    regionTopBottom: 'Верх + низ',
+    regionTopOnly: 'Верх',
     reset: 'Сброс',
-    subtitle: 'WebGL / VideoTexture / SDF / GLSL',
+    source: 'Исходник',
+    sourceHint: 'Загрузи изображение или движущийся source. Демо остается доступным.',
+    sourceKindImage: 'Изображение',
+    sourceKindVideo: 'Движение',
+    sourceSize: 'Размер исходника',
+    subtitle: 'WebGL / SourceTexture / SDF / GLSL',
+    uploadSource: 'Загрузить',
+    viewportSize: 'Экран',
   },
 } satisfies Record<Language, Record<string, string>>
 
@@ -102,11 +198,11 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
   cornerRadius: {
     en: {
       label: 'Corner radius',
-      help: 'SDF corner rounding. Keep low for a sharp cinematic video window.',
+      help: 'SDF corner rounding. Keep low for a sharp cinematic source frame.',
     },
     ru: {
       label: 'Скругление',
-      help: 'SDF-скругление углов. Держи низко для резкого киношного окна.',
+      help: 'SDF-скругление углов. Держи низко для резкой рамки исходника.',
     },
   },
   dispersion: {
@@ -152,11 +248,11 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
   fieldSoftness: {
     en: {
       label: 'Field softness',
-      help: 'Feather width that dissolves the field into the video background.',
+      help: 'Feather width that dissolves the field into the source background.',
     },
     ru: {
       label: 'Мягкость вреза',
-      help: 'Ширина растушевки, которая растворяет поле в фоне видео.',
+      help: 'Ширина растушевки, которая растворяет поле в фоне исходника.',
     },
   },
   fieldCurve: {
@@ -189,6 +285,26 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
       help: 'Масштаб GPU-рендера. 2 — качественный режим, 3 — стресс.',
     },
   },
+  regionWidth: {
+    en: {
+      label: 'Region width',
+      help: 'Width of selected effect strips from the chosen edges inward.',
+    },
+    ru: {
+      label: 'Ширина зоны',
+      help: 'Ширина выбранных полос эффекта от края внутрь.',
+    },
+  },
+  regionSoftness: {
+    en: {
+      label: 'Region softness',
+      help: 'Feathering at the inner border of selected strips.',
+    },
+    ru: {
+      label: 'Мягкость зоны',
+      help: 'Растушевка внутренней границы выбранных полос.',
+    },
+  },
 }
 
 function App() {
@@ -197,7 +313,18 @@ function App() {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [briefState, setBriefState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [exportView, setExportView] = useState<'brief' | 'preset'>('preset')
+  const [glassSource, setGlassSource] = useState<LiquidGlassSource>(defaultGlassSource)
   const [importState, setImportState] = useState<'idle' | 'imported' | 'invalid'>('idle')
+  const [sourceAspectLocked, setSourceAspectLocked] = useState(true)
+  const [sourceFrameMode, setSourceFrameMode] = useState<SourceFrameMode>('viewport')
+  const [sourceFrameSize, setSourceFrameSize] = useState<SourceSize>(defaultSourceSize)
+  const [sourceNaturalSize, setSourceNaturalSize] = useState<SourceSize>(defaultSourceSize)
+  const [uploadedSourceUrl, setUploadedSourceUrl] = useState<string | null>(null)
+  const [viewportSize, setViewportSize] = useState(() => ({
+    height: window.innerHeight,
+    width: window.innerWidth,
+  }))
+  const sourceFileInputRef = useRef<HTMLInputElement>(null)
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
   const presetJson = useMemo(() => serializeLiquidGlassPreset(activeSettings), [activeSettings])
   const integrationBrief = useMemo(
@@ -207,10 +334,55 @@ function App() {
   const [presetDraft, setPresetDraft] = useState(presetJson)
   const copy = uiCopy[language]
   const exportText = exportView === 'brief' ? integrationBrief : presetDraft
+  const sourceFrameStyle = useMemo<CSSProperties | undefined>(() => {
+    if (sourceFrameMode === 'viewport') {
+      return undefined
+    }
+
+    const controlReserve =
+      viewportSize.width > 760 ? Math.min(432, Math.max(0, viewportSize.width - 32)) + 72 : 20
+    const availableWidth = Math.max(280, viewportSize.width - controlReserve)
+    const availableHeight =
+      viewportSize.width > 760 ? Math.max(280, viewportSize.height - 48) : Math.max(220, viewportSize.height * 0.48)
+    const scale = Math.min(
+      1,
+      availableWidth / Math.max(sourceFrameSize.width, 1),
+      availableHeight / Math.max(sourceFrameSize.height, 1),
+    )
+    const centerX = viewportSize.width > 760 ? availableWidth / 2 : viewportSize.width / 2
+
+    return {
+      height: `${sourceFrameSize.height}px`,
+      left: `${centerX}px`,
+      top: '50%',
+      transform: `translate(-50%, -50%) scale(${scale})`,
+      width: `${sourceFrameSize.width}px`,
+    }
+  }, [sourceFrameMode, sourceFrameSize.height, sourceFrameSize.width, viewportSize.height, viewportSize.width])
 
   useEffect(() => {
     setPresetDraft(presetJson)
   }, [presetJson])
+
+  useEffect(() => {
+    const updateViewportSize = () => {
+      setViewportSize({
+        height: window.innerHeight,
+        width: window.innerWidth,
+      })
+    }
+
+    window.addEventListener('resize', updateViewportSize)
+    return () => window.removeEventListener('resize', updateViewportSize)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (uploadedSourceUrl) {
+        URL.revokeObjectURL(uploadedSourceUrl)
+      }
+    }
+  }, [uploadedSourceUrl])
 
   const handleSettingChange = (key: LiquidGlassSettingKey, value: number) => {
     setSettings((currentSettings) => ({
@@ -240,6 +412,108 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+  }
+
+  const handleRegionToggleChange = (key: RegionKey, value: boolean) => {
+    setSettings((currentSettings) => {
+      const normalizedSettings = normalizeLiquidGlassSettings(currentSettings)
+
+      return {
+        ...normalizedSettings,
+        [key]: value,
+        regionWidth: normalizedSettings.regionWidth >= 0.99 ? 0.32 : normalizedSettings.regionWidth,
+      }
+    })
+    setCopyState('idle')
+    setBriefState('idle')
+    setImportState('idle')
+  }
+
+  const handleRegionPresetChange = (edges: Record<RegionKey, boolean>) => {
+    setSettings((currentSettings) => {
+      const normalizedSettings = normalizeLiquidGlassSettings(currentSettings)
+      const allEdges = edges.regionTop && edges.regionRight && edges.regionBottom && edges.regionLeft
+
+      return {
+        ...normalizedSettings,
+        ...edges,
+        regionWidth: allEdges ? 1 : normalizedSettings.regionWidth >= 0.99 ? 0.32 : normalizedSettings.regionWidth,
+      }
+    })
+    setCopyState('idle')
+    setBriefState('idle')
+    setImportState('idle')
+  }
+
+  const handleSourceNaturalSizeChange = (size: SourceSize) => {
+    const nextNaturalSize = resolveNaturalSourceSize(size, sourceNaturalSize)
+
+    setSourceNaturalSize(nextNaturalSize)
+
+    if (sourceFrameMode === 'natural') {
+      setSourceFrameSize(nextNaturalSize)
+    }
+  }
+
+  const handleSourceFrameModeChange = (mode: SourceFrameMode) => {
+    setSourceFrameMode(mode)
+
+    if (mode === 'natural') {
+      setSourceFrameSize(sourceNaturalSize)
+    }
+  }
+
+  const handleSourceDimensionChange = (axis: 'height' | 'width', value: number) => {
+    setSourceFrameMode('manual')
+    setSourceFrameSize((currentSize) =>
+      resizeSourceFrameWithAspect({
+        axis,
+        lockAspect: sourceAspectLocked,
+        nextValue: value,
+        size: currentSize,
+      }),
+    )
+  }
+
+  const handleSourceFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+
+    if (!file) {
+      return
+    }
+
+    const kind = file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+        ? 'video'
+        : null
+
+    if (!kind) {
+      return
+    }
+
+    const nextSourceUrl = URL.createObjectURL(file)
+
+    setUploadedSourceUrl(nextSourceUrl)
+    setGlassSource({
+      kind,
+      name: file.name,
+      src: nextSourceUrl,
+    })
+    setSourceFrameMode('natural')
+    setCopyState('idle')
+    setBriefState('idle')
+  }
+
+  const resetSource = () => {
+    setGlassSource(defaultGlassSource)
+    setUploadedSourceUrl(null)
+    setSourceFrameMode('viewport')
+    setSourceNaturalSize(defaultSourceSize)
+    setSourceFrameSize(defaultSourceSize)
+    setCopyState('idle')
+    setBriefState('idle')
   }
 
   const copyCurrentExport = async () => {
@@ -284,12 +558,16 @@ function App() {
 
   return (
     <main className="app-shell" aria-label="Liquid Prnc Glass lab">
-      <section className="preview-stage" aria-label="WebGL video glass preview">
+      <section className="preview-stage" aria-label="WebGL source glass preview">
         <WebGLVideoEdgeGlass
-          className="preview-stage__glass"
-          poster={demoPoster}
+          className={`preview-stage__glass${
+            sourceFrameMode === 'viewport' ? '' : ' preview-stage__glass--framed'
+          }`}
+          onNaturalSizeChange={handleSourceNaturalSizeChange}
           settings={activeSettings}
-          src={demoVideo}
+          source={glassSource}
+          sourceNaturalSize={sourceNaturalSize}
+          style={sourceFrameStyle}
         />
       </section>
       <aside className="control-panel" aria-label="Glass controls">
@@ -313,6 +591,87 @@ function App() {
           <span>{copy.subtitle}</span>
         </div>
         <div className="control-panel__controls">
+          <details className="control-group" open>
+            <summary>{copy.source}</summary>
+            <div className="source-toolbar">
+              <button onClick={resetSource} type="button">
+                {copy.demoSource}
+              </button>
+              <button onClick={() => sourceFileInputRef.current?.click()} type="button">
+                {copy.uploadSource}
+              </button>
+              <input
+                accept="image/*,video/*"
+                className="source-toolbar__file"
+                onChange={handleSourceFileChange}
+                ref={sourceFileInputRef}
+                type="file"
+              />
+            </div>
+            <small className="field-toggle__hint">
+              {copy.sourceHint}
+            </small>
+            <div className="source-readout">
+              <span>{glassSource.name}</span>
+              <span>
+                {glassSource.kind === 'image' ? copy.sourceKindImage : copy.sourceKindVideo} /{' '}
+                {sourceNaturalSize.width}x{sourceNaturalSize.height}
+              </span>
+            </div>
+            <div className="fade-mode">
+              <span>{copy.sourceSize}</span>
+              <div className="source-size-mode">
+                {(['viewport', 'natural', 'manual'] as SourceFrameMode[]).map((mode) => (
+                  <button
+                    aria-pressed={sourceFrameMode === mode}
+                    key={mode}
+                    onClick={() => handleSourceFrameModeChange(mode)}
+                    type="button"
+                  >
+                    {mode === 'viewport'
+                      ? copy.viewportSize
+                      : mode === 'natural'
+                        ? copy.naturalSize
+                        : copy.manualSize}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="field-toggle">
+              <input
+                checked={sourceAspectLocked}
+                onChange={(event) => setSourceAspectLocked(event.currentTarget.checked)}
+                type="checkbox"
+              />
+              <span>{copy.lockAspect}</span>
+            </label>
+            <div className="source-dimensions">
+              <label>
+                <span>W</span>
+                <input
+                  min={64}
+                  onChange={(event) =>
+                    handleSourceDimensionChange('width', Number(event.currentTarget.value))
+                  }
+                  step={1}
+                  type="number"
+                  value={sourceFrameSize.width}
+                />
+              </label>
+              <label>
+                <span>H</span>
+                <input
+                  min={64}
+                  onChange={(event) =>
+                    handleSourceDimensionChange('height', Number(event.currentTarget.value))
+                  }
+                  step={1}
+                  type="number"
+                  value={sourceFrameSize.height}
+                />
+              </label>
+            </div>
+          </details>
           <details className="control-group" open>
             <summary>{copy.coreOptics}</summary>
             {coreControls.map((control) => {
@@ -408,6 +767,61 @@ function App() {
             ) : (
               <p className="control-group__empty">{copy.fieldHidden}</p>
             )}
+          </details>
+          <details className="control-group" open>
+            <summary>{copy.effectRegions}</summary>
+            <div className="region-presets">
+              {regionPresetOptions.map((option) => (
+                <button
+                  key={option.copyKey}
+                  onClick={() => handleRegionPresetChange(option.edges)}
+                  type="button"
+                >
+                  {copy[option.copyKey]}
+                </button>
+              ))}
+            </div>
+            <div className="region-grid">
+              {regionToggleOptions.map((option) => (
+                <button
+                  aria-pressed={activeSettings[option.key]}
+                  key={option.key}
+                  onClick={() => handleRegionToggleChange(option.key, !activeSettings[option.key])}
+                  type="button"
+                >
+                  {copy[option.copyKey]}
+                </button>
+              ))}
+            </div>
+            {regionControls.map((control) => {
+              const inputId = `glass-${control.key}`
+              const text = controlCopy[control.key][language]
+
+              return (
+                <div className="glass-control" key={control.key}>
+                  <span className="glass-control__row">
+                    <label htmlFor={inputId} title={text.help}>
+                      {text.label}
+                    </label>
+                    <output aria-hidden="true" htmlFor={inputId}>
+                      {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                    </output>
+                  </span>
+                  <input
+                    id={inputId}
+                    max={control.max}
+                    min={control.min}
+                    onChange={(event) =>
+                      handleSettingChange(control.key, Number(event.currentTarget.value))
+                    }
+                    step={control.step}
+                    type="range"
+                    value={activeSettings[control.key]}
+                  />
+                  <small>{text.help}</small>
+                </div>
+              )
+            })}
           </details>
         </div>
         <div className="preset-box">

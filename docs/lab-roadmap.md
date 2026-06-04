@@ -120,6 +120,36 @@ Implementation contract:
 - show the generated brief in the export textarea even if clipboard access is blocked;
 - prove the generated brief does not use narrow source wording.
 
+## Current Task: Source Selection + Effect Regions
+
+Status:
+
+```txt
+implemented
+```
+
+Problem:
+
+The lab had one hardwired demo source and one full-frame effect coverage. The next useful control layer needs to choose the source type and where the optical effect is active.
+
+Implementation contract:
+
+- keep the default demo source unchanged;
+- allow uploaded image or uploaded motion source;
+- support viewport, natural, and manual source frame sizing;
+- preserve aspect by default, with an explicit unlock;
+- keep upload state out of `LiquidGlassSettings`;
+- add top/right/bottom/left effect region booleans to the optical preset;
+- add `regionWidth` and `regionSoftness`;
+- apply region masking inside the shader path, not as a CSS overlay.
+
+Result:
+
+- renderer now samples a generic source texture;
+- field mode multiplies `masterFade` by `regionMask`;
+- SDF edge mode multiplies `borderMask` by `regionMask`;
+- old presets keep full coverage by default.
+
 ## Task Backlog
 
 ### 1. Shape Geometry Picker

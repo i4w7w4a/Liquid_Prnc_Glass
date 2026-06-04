@@ -1,7 +1,10 @@
 import * as THREE from 'three'
 import type { LiquidGlassSettings } from './settings'
+import type { SourceSize } from './sourceLayout'
 
-type VideoFrameSource = HTMLVideoElement & {
+type RenderSourceElement = HTMLImageElement | HTMLVideoElement
+
+type VideoSourceElement = HTMLVideoElement & {
   cancelVideoFrameCallback?: (handle: number) => void
   requestVideoFrameCallback?: (callback: () => void) => number
 }
@@ -9,7 +12,8 @@ type VideoFrameSource = HTMLVideoElement & {
 type RendererOptions = {
   canvas: HTMLCanvasElement
   settings: LiquidGlassSettings
-  video: HTMLVideoElement
+  source: RenderSourceElement
+  sourceNaturalSize?: SourceSize
 }
 
 const vertexShader = `
@@ -24,9 +28,9 @@ void main() {
 const fragmentShader = `
 precision highp float;
 
-uniform sampler2D uVideoTexture;
+uniform sampler2D uSourceTexture;
 uniform vec2 uResolution;
-uniform float uVideoAspect;
+uniform float uSourceAspect;
 uniform float uTime;
 uniform float uIOR;
 uniform float uBorderThickness;
@@ -40,6 +44,9 @@ uniform float uFieldSoftness;
 uniform float uFieldFadeMode;
 uniform float uFieldCurve;
 uniform float uFieldStrength;
+uniform vec4 uRegionEdges;
+uniform float uRegionWidth;
+uniform float uRegionSoftness;
 
 varying vec2 vUv;
 
@@ -50,27 +57,27 @@ float sdRoundedBox(vec2 p, vec2 b, float r) {
 
 vec2 coverUv(vec2 uv) {
   float canvasAspect = uResolution.x / max(uResolution.y, 1.0);
-  float videoAspect = max(uVideoAspect, 0.01);
+  float sourceAspect = max(uSourceAspect, 0.01);
   vec2 scale = vec2(1.0);
 
-  if (canvasAspect > videoAspect) {
-    scale.y = videoAspect / canvasAspect;
+  if (canvasAspect > sourceAspect) {
+    scale.y = sourceAspect / canvasAspect;
   } else {
-    scale.x = canvasAspect / videoAspect;
+    scale.x = canvasAspect / sourceAspect;
   }
 
   return (uv - 0.5) * scale + 0.5;
 }
 
-vec3 sampleVideo(vec2 uv) {
-  return texture2D(uVideoTexture, clamp(coverUv(uv), vec2(0.001), vec2(0.999))).rgb;
+vec3 sampleSource(vec2 uv) {
+  return texture2D(uSourceTexture, clamp(coverUv(uv), vec2(0.001), vec2(0.999))).rgb;
 }
 
-vec3 sampleDispersedVideo(vec2 uv, vec2 refractOffset, float chroma) {
+vec3 sampleDispersedSource(vec2 uv, vec2 refractOffset, float chroma) {
   vec3 color;
-  color.r = sampleVideo(uv + refractOffset * (1.0 + chroma * 3.5)).r;
-  color.g = sampleVideo(uv + refractOffset).g;
-  color.b = sampleVideo(uv + refractOffset * (1.0 - chroma * 3.5)).b;
+  color.r = sampleSource(uv + refractOffset * (1.0 + chroma * 3.5)).r;
+  color.g = sampleSource(uv + refractOffset).g;
+  color.b = sampleSource(uv + refractOffset * (1.0 - chroma * 3.5)).b;
   return color;
 }
 
@@ -83,6 +90,28 @@ float signedOpticalPower(float ior) {
   return ior * 0.18032787;
 }
 
+float stripMask(float distanceToEdge, float width, float softness) {
+  float innerStart = max(0.0, width - softness);
+  return 1.0 - smoothstep(innerStart, width, distanceToEdge);
+}
+
+float effectRegionMask(vec2 uv) {
+  float selected = max(max(uRegionEdges.x, uRegionEdges.y), max(uRegionEdges.z, uRegionEdges.w));
+
+  if (selected < 0.5) {
+    return 0.0;
+  }
+
+  float width = clamp(uRegionWidth, 0.0, 1.0);
+  float softness = clamp(uRegionSoftness, 0.001, 0.5);
+  float top = stripMask(1.0 - uv.y, width, softness) * uRegionEdges.x;
+  float right = stripMask(1.0 - uv.x, width, softness) * uRegionEdges.y;
+  float bottom = stripMask(uv.y, width, softness) * uRegionEdges.z;
+  float left = stripMask(uv.x, width, softness) * uRegionEdges.w;
+
+  return clamp(max(max(top, right), max(bottom, left)), 0.0, 1.0);
+}
+
 void main() {
   float aspect = uResolution.x / max(uResolution.y, 1.0);
   vec2 aspectCorrection = vec2(aspect, 1.0);
@@ -93,6 +122,7 @@ void main() {
   float d = sdRoundedBox(p, innerSize, radius);
   float chroma = clamp(uDispersion, 0.0, 0.12);
   vec2 lightDirection = normalize(vec2(-0.46, -0.89));
+  float regionMask = effectRegionMask(vUv);
 
   if (uFieldEnabled > 0.5) {
     vec2 centerVector = (vUv - 0.5) * aspectCorrection;
@@ -111,14 +141,14 @@ void main() {
     float longRamp = smoothstep(max(0.0, fieldStart - fieldSoftness * 0.45), 1.18, edgeTravel);
     float maskFade = pow(smoothstep(0.0, 1.0, fadeProgress) * longRamp, fieldCurve);
     float dissolveFade = pow(smootherstep01(fadeProgress), max(0.6, fieldCurve * 0.82)) * longRamp;
-    float masterFade = mix(maskFade, dissolveFade, step(0.5, uFieldFadeMode));
+    float masterFade = mix(maskFade, dissolveFade, step(0.5, uFieldFadeMode)) * regionMask;
 
     vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
     float fieldStrength = clamp(uFieldStrength, 0.0, 2.5);
     float pull = signedOpticalPower(uIOR) * masterFade * fieldStrength * (0.055 + thickness * 0.38);
     vec2 refractOffset = normal * pull / aspectCorrection;
-    vec3 baseColor = sampleVideo(vUv);
-    vec3 opticalColor = sampleDispersedVideo(vUv, refractOffset, chroma);
+    vec3 baseColor = sampleSource(vUv);
+    vec3 opticalColor = sampleDispersedSource(vUv, refractOffset, chroma);
     float edgeMask = smoothstep(max(fieldStart + fieldSoftness * 0.65, 0.52), 1.2, edgeTravel) * masterFade;
     float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * edgeMask;
     float lowerLip = smoothstep(0.58, 1.0, vUv.y) * edgeMask;
@@ -136,7 +166,7 @@ void main() {
   }
 
   if (d < -0.001) {
-    gl_FragColor = vec4(sampleVideo(vUv), 1.0);
+    gl_FragColor = vec4(sampleSource(vUv), 1.0);
     return;
   }
 
@@ -148,10 +178,11 @@ void main() {
 
   float borderMask = smoothstep(-0.001, thickness * 0.15, d) *
     (1.0 - smoothstep(thickness * 0.62, thickness * 1.24, d));
+  borderMask *= regionMask;
   float bevel = pow(1.0 - clamp(d / max(thickness, 0.001), 0.0, 1.0), 0.58);
   float pull = signedOpticalPower(uIOR) * borderMask * (0.07 + thickness * 0.62);
   vec2 refractOffset = normal * pull / aspectCorrection;
-  vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
+  vec3 color = sampleDispersedSource(vUv, refractOffset, chroma);
   float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * borderMask;
   float lowerLip = smoothstep(0.56, 1.0, vUv.y) * borderMask;
   float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.055 + vUv.y * 0.28)));
@@ -178,13 +209,15 @@ export class WebGLVideoEdgeGlassRenderer {
   private readonly resizeObserver: ResizeObserver
   private readonly scene = new THREE.Scene()
   private settings: LiquidGlassSettings
-  private readonly video: HTMLVideoElement
+  private readonly source: RenderSourceElement
+  private sourceNaturalSize?: SourceSize
   private videoFrameHandle: number | null = null
-  private readonly videoTexture: THREE.VideoTexture
+  private readonly sourceTexture: THREE.Texture
 
-  constructor({ canvas, settings, video }: RendererOptions) {
+  constructor({ canvas, settings, source, sourceNaturalSize }: RendererOptions) {
     this.canvas = canvas
-    this.video = video
+    this.source = source
+    this.sourceNaturalSize = sourceNaturalSize
     this.settings = settings
     this.renderer = new THREE.WebGLRenderer({
       alpha: false,
@@ -197,11 +230,7 @@ export class WebGLVideoEdgeGlassRenderer {
     this.renderer.setClearColor(0x020202, 1)
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-    this.videoTexture = new THREE.VideoTexture(video)
-    this.videoTexture.colorSpace = THREE.SRGBColorSpace
-    this.videoTexture.generateMipmaps = false
-    this.videoTexture.magFilter = THREE.LinearFilter
-    this.videoTexture.minFilter = THREE.LinearFilter
+    this.sourceTexture = this.createSourceTexture(source)
 
     this.material = new THREE.ShaderMaterial({
       depthTest: false,
@@ -220,10 +249,20 @@ export class WebGLVideoEdgeGlassRenderer {
         uFieldStrength: { value: settings.fieldStrength },
         uHighlightStrength: { value: settings.highlightStrength },
         uIOR: { value: settings.ior },
+        uRegionEdges: {
+          value: new THREE.Vector4(
+            settings.regionTop ? 1 : 0,
+            settings.regionRight ? 1 : 0,
+            settings.regionBottom ? 1 : 0,
+            settings.regionLeft ? 1 : 0,
+          ),
+        },
+        uRegionSoftness: { value: settings.regionSoftness },
+        uRegionWidth: { value: settings.regionWidth },
         uResolution: { value: new THREE.Vector2(1, 1) },
         uTime: { value: 0 },
-        uVideoAspect: { value: 16 / 9 },
-        uVideoTexture: { value: this.videoTexture },
+        uSourceAspect: { value: 16 / 9 },
+        uSourceTexture: { value: this.sourceTexture },
       },
       vertexShader,
     })
@@ -234,17 +273,29 @@ export class WebGLVideoEdgeGlassRenderer {
     this.updateSettings(settings)
   }
 
+  private createSourceTexture(source: RenderSourceElement) {
+    const texture = this.isVideoSource(source) ? new THREE.VideoTexture(source) : new THREE.Texture(source)
+
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.generateMipmaps = false
+    texture.magFilter = THREE.LinearFilter
+    texture.minFilter = THREE.LinearFilter
+    texture.needsUpdate = true
+
+    return texture
+  }
+
   dispose() {
     this.disposed = true
     this.renderer.setAnimationLoop(null)
     this.resizeObserver.disconnect()
-    const source = this.video as VideoFrameSource
+    const source = this.source as VideoSourceElement
 
-    if (this.videoFrameHandle !== null && source.cancelVideoFrameCallback) {
+    if (this.videoFrameHandle !== null && this.isVideoSource(this.source) && source.cancelVideoFrameCallback) {
       source.cancelVideoFrameCallback(this.videoFrameHandle)
     }
 
-    this.videoTexture.dispose()
+    this.sourceTexture.dispose()
     this.geometry.dispose()
     this.material.dispose()
     this.renderer.dispose()
@@ -252,9 +303,19 @@ export class WebGLVideoEdgeGlassRenderer {
 
   start() {
     this.resize()
-    void this.video.play().catch(() => undefined)
-    this.startVideoFrameLoop()
+
+    if (this.isVideoSource(this.source)) {
+      void this.source.play().catch(() => undefined)
+      this.startVideoFrameLoop()
+    }
+
     this.renderer.setAnimationLoop((time) => this.render(time))
+  }
+
+  updateSourceNaturalSize(sourceNaturalSize: SourceSize) {
+    this.sourceNaturalSize = sourceNaturalSize
+    this.sourceTexture.needsUpdate = true
+    this.resize()
   }
 
   updateSettings(settings: LiquidGlassSettings) {
@@ -271,6 +332,14 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uFieldStart.value = settings.fieldStart
     this.material.uniforms.uFieldStrength.value = settings.fieldStrength
     this.material.uniforms.uHighlightStrength.value = settings.highlightStrength
+    this.material.uniforms.uRegionEdges.value.set(
+      settings.regionTop ? 1 : 0,
+      settings.regionRight ? 1 : 0,
+      settings.regionBottom ? 1 : 0,
+      settings.regionLeft ? 1 : 0,
+    )
+    this.material.uniforms.uRegionSoftness.value = settings.regionSoftness
+    this.material.uniforms.uRegionWidth.value = settings.regionWidth
     this.resize()
   }
 
@@ -279,8 +348,8 @@ export class WebGLVideoEdgeGlassRenderer {
       return
     }
 
-    if (!(this.video as VideoFrameSource).requestVideoFrameCallback) {
-      this.videoTexture.needsUpdate = true
+    if (this.isVideoSource(this.source) && !(this.source as VideoSourceElement).requestVideoFrameCallback) {
+      this.sourceTexture.needsUpdate = true
     }
 
     this.material.uniforms.uTime.value = time / 1000
@@ -295,22 +364,22 @@ export class WebGLVideoEdgeGlassRenderer {
     this.renderer.setPixelRatio(pixelRatio)
     this.renderer.setSize(width, height, false)
     this.material.uniforms.uResolution.value.set(this.canvas.width, this.canvas.height)
-    const videoAspect =
-      this.video.videoWidth > 0 && this.video.videoHeight > 0
-        ? this.video.videoWidth / this.video.videoHeight
-        : 16 / 9
-    this.material.uniforms.uVideoAspect.value = videoAspect
+    this.material.uniforms.uSourceAspect.value = this.getSourceAspect()
   }
 
   private startVideoFrameLoop() {
-    const source = this.video as VideoFrameSource
+    if (!this.isVideoSource(this.source)) {
+      return
+    }
+
+    const source = this.source as VideoSourceElement
 
     if (!source.requestVideoFrameCallback) {
       return
     }
 
     const updateTexture = () => {
-      this.videoTexture.needsUpdate = true
+      this.sourceTexture.needsUpdate = true
 
       if (!this.disposed && source.requestVideoFrameCallback) {
         this.videoFrameHandle = source.requestVideoFrameCallback(updateTexture)
@@ -318,5 +387,29 @@ export class WebGLVideoEdgeGlassRenderer {
     }
 
     this.videoFrameHandle = source.requestVideoFrameCallback(updateTexture)
+  }
+
+  private getSourceAspect() {
+    if (
+      this.sourceNaturalSize &&
+      this.sourceNaturalSize.width > 0 &&
+      this.sourceNaturalSize.height > 0
+    ) {
+      return this.sourceNaturalSize.width / this.sourceNaturalSize.height
+    }
+
+    if (this.isVideoSource(this.source) && this.source.videoWidth > 0 && this.source.videoHeight > 0) {
+      return this.source.videoWidth / this.source.videoHeight
+    }
+
+    if (!this.isVideoSource(this.source) && this.source.naturalWidth > 0 && this.source.naturalHeight > 0) {
+      return this.source.naturalWidth / this.source.naturalHeight
+    }
+
+    return 16 / 9
+  }
+
+  private isVideoSource(source: RenderSourceElement): source is HTMLVideoElement {
+    return source.tagName.toLowerCase() === 'video'
   }
 }
