@@ -2,6 +2,12 @@
 
 This document is the technical memory of the effect.
 
+Research index:
+
+```txt
+docs/research-packs.md
+```
+
 Source work:
 
 ```txt

@@ -67,7 +67,9 @@ src/
     index.ts
 docs/
   architecture.md
+  case-kube-io-math-webgl.md
   research-liquid-glass.md
+  research-packs.md
   shader.md
   tuning.md
   moderation-guide.md
@@ -145,7 +147,9 @@ The component owns a hidden video element and a canvas. The renderer owns the Th
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Research Packs](docs/research-packs.md)
 - [Research: Liquid Glass Over Video](docs/research-liquid-glass.md)
+- [Case Pack 02: Kube.io Math On WebGL GPU](docs/case-kube-io-math-webgl.md)
 - [Shader](docs/shader.md)
 - [Tuning](docs/tuning.md)
 - [Moderation Guide](docs/moderation-guide.md)

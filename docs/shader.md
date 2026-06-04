@@ -1,6 +1,6 @@
 # Shader
 
-The full research base for the effect is in [Research: Liquid Glass Over Video](research-liquid-glass.md). This page stays focused on the current shader implementation.
+The full research index is in [Research Packs](research-packs.md). This page stays focused on the current shader implementation.
 
 The fragment shader lives in:
 

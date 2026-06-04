@@ -1,6 +1,6 @@
 # Architecture
 
-Before changing the renderer, read [Research: Liquid Glass Over Video](research-liquid-glass.md). It contains the source link, formulas, optical model, and QA rules behind this lab.
+Before changing the renderer, read [Research Packs](research-packs.md). The current shader is grounded in [Research: Liquid Glass Over Video](research-liquid-glass.md), and the next profile-library path is stored in [Case Pack 02: Kube.io Math On WebGL GPU](case-kube-io-math-webgl.md).
 
 The project has three layers.
 
