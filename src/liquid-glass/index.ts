@@ -10,6 +10,7 @@ export {
 export type {
   LiquidGlassBooleanSettingKey,
   LiquidGlassControl,
+  LiquidGlassDiscreteSettingKey,
   LiquidGlassSettingKey,
   LiquidGlassSettings,
 } from './settings'

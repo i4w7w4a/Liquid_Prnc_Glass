@@ -10,12 +10,23 @@ import {
   parseLiquidGlassPreset,
   serializeLiquidGlassPreset,
 } from './liquid-glass'
-import type { LiquidGlassSettingKey, LiquidGlassSettings } from './liquid-glass'
+import type {
+  LiquidGlassDiscreteSettingKey,
+  LiquidGlassSettingKey,
+  LiquidGlassSettings,
+} from './liquid-glass'
 
 type Language = 'en' | 'ru'
 
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
+const fieldFadeOptions: {
+  copyKey: 'fadeMask' | 'fadeDissolve'
+  value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]
+}[] = [
+  { value: 0, copyKey: 'fadeMask' },
+  { value: 1, copyKey: 'fadeDissolve' },
+]
 
 const uiCopy = {
   en: {
@@ -25,6 +36,9 @@ const uiCopy = {
     copied: 'Copied',
     currentPreset: 'Current preset',
     enableField: 'Enable center-to-edge field',
+    fadeDissolve: 'Source dissolve',
+    fadeMask: 'Optical mask',
+    fadeMethod: 'Fade method',
     fieldHidden: 'Field controls are hidden until enabled.',
     fieldHint: 'The center stays clean; refraction dissolves into the video by curve.',
     failed: 'Failed',
@@ -41,6 +55,9 @@ const uiCopy = {
     copied: 'Скопировано',
     currentPreset: 'Текущий пресет',
     enableField: 'Включить поле от центра к краю',
+    fadeDissolve: 'Растворение в исходник',
+    fadeMask: 'Оптическая маска',
+    fadeMethod: 'Метод затухания',
     fieldHidden: 'Настройки поля скрыты, пока режим выключен.',
     fieldHint: 'Центр остается чистым; преломление растворяется в видео по кривой.',
     failed: 'Ошибка',
@@ -56,11 +73,11 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
   ior: {
     en: {
       label: 'IOR',
-      help: 'Optical strength. Raise slowly; high values bend the edge aggressively.',
+      help: 'Signed optical power. 0 is clean; negative values reverse refraction.',
     },
     ru: {
       label: 'IOR',
-      help: 'Оптическая сила. Поднимай медленно; высокие значения резко гнут край.',
+      help: 'Подписанная оптическая сила. 0 - чистое видео; минус разворачивает преломление.',
     },
   },
   edgeThickness: {
@@ -197,6 +214,15 @@ function App() {
     setImportState('idle')
   }
 
+  const handleFieldFadeModeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
+    setSettings((currentSettings) => ({
+      ...normalizeLiquidGlassSettings(currentSettings),
+      fieldFadeMode: value,
+    }))
+    setCopyState('idle')
+    setImportState('idle')
+  }
+
   const copyPreset = async () => {
     try {
       await navigator.clipboard.writeText(presetJson)
@@ -299,35 +325,52 @@ function App() {
               {copy.fieldHint}
             </small>
             {activeSettings.fieldEnabled ? (
-              fieldControls.map((control) => {
-                const inputId = `glass-${control.key}`
-                const text = controlCopy[control.key][language]
-
-                return (
-                  <div className="glass-control" key={control.key}>
-                    <span className="glass-control__row">
-                      <label htmlFor={inputId} title={text.help}>
-                        {text.label}
-                      </label>
-                      <output aria-hidden="true" htmlFor={inputId}>
-                        {formatLiquidGlassValue(control.key, activeSettings[control.key])}
-                      </output>
-                    </span>
-                    <input
-                      id={inputId}
-                      max={control.max}
-                      min={control.min}
-                      onChange={(event) =>
-                        handleSettingChange(control.key, Number(event.currentTarget.value))
-                      }
-                      step={control.step}
-                      type="range"
-                      value={activeSettings[control.key]}
-                    />
-                    <small>{text.help}</small>
+              <>
+                <div className="fade-mode">
+                  <span>{copy.fadeMethod}</span>
+                  <div className="fade-mode__buttons">
+                    {fieldFadeOptions.map((option) => (
+                      <button
+                        aria-pressed={activeSettings.fieldFadeMode === option.value}
+                        key={option.value}
+                        onClick={() => handleFieldFadeModeChange(option.value)}
+                        type="button"
+                      >
+                        {copy[option.copyKey]}
+                      </button>
+                    ))}
                   </div>
-                )
-              })
+                </div>
+                {fieldControls.map((control) => {
+                  const inputId = `glass-${control.key}`
+                  const text = controlCopy[control.key][language]
+
+                  return (
+                    <div className="glass-control" key={control.key}>
+                      <span className="glass-control__row">
+                        <label htmlFor={inputId} title={text.help}>
+                          {text.label}
+                        </label>
+                        <output aria-hidden="true" htmlFor={inputId}>
+                          {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                        </output>
+                      </span>
+                      <input
+                        id={inputId}
+                        max={control.max}
+                        min={control.min}
+                        onChange={(event) =>
+                          handleSettingChange(control.key, Number(event.currentTarget.value))
+                        }
+                        step={control.step}
+                        type="range"
+                        value={activeSettings[control.key]}
+                      />
+                      <small>{text.help}</small>
+                    </div>
+                  )
+                })}
+              </>
             ) : (
               <p className="control-group__empty">{copy.fieldHidden}</p>
             )}

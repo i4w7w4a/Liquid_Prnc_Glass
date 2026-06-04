@@ -53,11 +53,17 @@ This normal is the direction of optical displacement.
 The UV offset is derived from:
 
 ```glsl
-float pull = (uIOR - 1.0) * borderMask * (0.07 + thickness * 0.62);
+float pull = signedOpticalPower(uIOR) * borderMask * (0.07 + thickness * 0.62);
 vec2 refractOffset = normal * pull / aspectCorrection;
 ```
 
-Higher `uIOR` means stronger bending.
+`uIOR` is now a signed lab control:
+
+- `0.0`: clean source video;
+- positive values: bend along the surface normal;
+- negative values: bend against the surface normal.
+
+The shader maps it through `signedOpticalPower()` so the older default look stays close to the previous visual strength.
 
 ## Center-To-Edge Field
 
@@ -83,18 +89,20 @@ float edgeTravel = mix(ellipseTravel, rectTravel, edgeBlend * 0.16);
 Then it turns that travel into a mask:
 
 ```glsl
-float fieldEnd = min(1.22, uFieldStart + uFieldSoftness);
-float softRamp = smoothstep(uFieldStart, fieldEnd, edgeTravel);
+float fadeProgress = clamp((edgeTravel - fieldStart) / fieldSoftness, 0.0, 1.0);
 float longRamp = smoothstep(uFieldStart - uFieldSoftness * 0.45, 1.18, edgeTravel);
-float fieldMask = softRamp * longRamp;
-fieldMask = pow(fieldMask, uFieldCurve);
+float maskFade = pow(smoothstep(0.0, 1.0, fadeProgress) * longRamp, uFieldCurve);
+float dissolveFade = pow(smootherstep01(fadeProgress), uFieldCurve * 0.82) * longRamp;
+float masterFade = mix(maskFade, dissolveFade, step(0.5, uFieldFadeMode));
 ```
 
 Meaning:
 
 - `uFieldStart` protects the clean center;
 - `uFieldSoftness` feathers the effect into the source video;
-- `smoothstep()` avoids a hard visible seam;
+- `uFieldFadeMode == 0` uses the optical mask;
+- `uFieldFadeMode == 1` dissolves more of the final result back into the source;
+- `masterFade` is applied after the optical color is built, so refraction, dispersion, darkening, and highlights all fade together;
 - `uFieldCurve` controls how gently the effect wakes up;
 - `uFieldStrength` controls the final refraction pull.
 

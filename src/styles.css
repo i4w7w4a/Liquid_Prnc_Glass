@@ -250,6 +250,49 @@ button {
   line-height: 1.35;
 }
 
+.fade-mode {
+  display: grid;
+  gap: 7px;
+  color: rgba(218, 255, 226, 0.88);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.fade-mode > span {
+  color: rgba(218, 255, 226, 0.86);
+}
+
+.fade-mode__buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.fade-mode button {
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid rgba(177, 106, 255, 0.42);
+  color: rgba(230, 212, 255, 0.76);
+  background:
+    linear-gradient(180deg, rgba(139, 79, 255, 0.14), rgba(58, 20, 116, 0.22)),
+    rgba(5, 2, 12, 0.62);
+  box-shadow: 0 0 16px rgba(143, 71, 255, 0.12);
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1.15;
+}
+
+.fade-mode button[aria-pressed="true"] {
+  border-color: rgba(203, 163, 255, 0.86);
+  color: #f1e9ff;
+  background:
+    linear-gradient(180deg, rgba(170, 104, 255, 0.32), rgba(83, 31, 160, 0.38)),
+    rgba(10, 2, 22, 0.82);
+  box-shadow:
+    0 0 18px rgba(154, 87, 255, 0.32),
+    inset 0 0 0 1px rgba(244, 235, 255, 0.1);
+}
+
 .preset-box {
   display: grid;
   gap: 10px;

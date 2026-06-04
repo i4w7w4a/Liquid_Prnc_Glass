@@ -12,8 +12,10 @@ export type LiquidGlassSettingKey =
   | 'pixelRatio'
 
 export type LiquidGlassBooleanSettingKey = 'fieldEnabled'
+export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode'
 
 export type LiquidGlassSettings = Record<LiquidGlassSettingKey, number> &
+  Record<LiquidGlassDiscreteSettingKey, number> &
   Record<LiquidGlassBooleanSettingKey, boolean>
 
 export type LiquidGlassControl = {
@@ -44,6 +46,7 @@ const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
 ]
 
 const liquidGlassBooleanSettingKeys: LiquidGlassBooleanSettingKey[] = ['fieldEnabled']
+const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode']
 
 export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   ior: 1.22,
@@ -54,6 +57,7 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   highlightStrength: 0.72,
   fieldStart: 0.22,
   fieldSoftness: 0.42,
+  fieldFadeMode: 0,
   fieldCurve: 2.4,
   fieldStrength: 1,
   pixelRatio: 2,
@@ -64,11 +68,11 @@ export const liquidGlassControls: LiquidGlassControl[] = [
   {
     key: 'ior',
     label: 'IOR',
-    min: 1,
-    max: 1.55,
+    min: -3.05,
+    max: 3.05,
     step: 0.01,
     section: 'core',
-    help: 'Optical strength. Raise slowly; high values bend the edge aggressively.',
+    help: 'Signed optical power. 0 is clean; negative values reverse refraction.',
   },
   {
     key: 'edgeThickness',
@@ -237,6 +241,24 @@ export function parseLiquidGlassPreset(rawPreset: string): LiquidGlassSettings {
     const control = liquidGlassControls.find((item) => item.key === key)
 
     if (control && (value < control.min || value > control.max)) {
+      throw new Error(`Setting out of range: ${key}`)
+    }
+
+    preset[key] = value
+  }
+
+  for (const key of liquidGlassDiscreteSettingKeys) {
+    const value = parsedPreset[key]
+
+    if (value === undefined) {
+      continue
+    }
+
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error(`Invalid setting: ${key}`)
+    }
+
+    if (value < 0 || value > 1) {
       throw new Error(`Setting out of range: ${key}`)
     }
 

@@ -22,8 +22,13 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.fieldEnabled).toBe(false)
     expect(defaultLiquidGlassSettings.fieldStart).toBe(0.22)
     expect(defaultLiquidGlassSettings.fieldSoftness).toBe(0.42)
+    expect(defaultLiquidGlassSettings.fieldFadeMode).toBe(0)
     expect(defaultLiquidGlassSettings.fieldCurve).toBe(2.4)
     expect(defaultLiquidGlassSettings.fieldStrength).toBe(1)
+  })
+
+  it('formats signed IOR values', () => {
+    expect(formatLiquidGlassValue('ior', -0.65)).toBe('-0.65')
   })
 
   it('parses a complete preset from JSON', () => {
@@ -48,6 +53,7 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.fieldEnabled).toBe(false)
     expect(parsedPreset.fieldStart).toBe(defaultLiquidGlassSettings.fieldStart)
     expect(parsedPreset.fieldSoftness).toBe(defaultLiquidGlassSettings.fieldSoftness)
+    expect(parsedPreset.fieldFadeMode).toBe(defaultLiquidGlassSettings.fieldFadeMode)
     expect(parsedPreset.fieldCurve).toBe(defaultLiquidGlassSettings.fieldCurve)
     expect(parsedPreset.fieldStrength).toBe(defaultLiquidGlassSettings.fieldStrength)
   })
@@ -67,6 +73,18 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.fieldEnabled).toBe(false)
     expect(normalizedSettings.fieldStart).toBe(defaultLiquidGlassSettings.fieldStart)
     expect(normalizedSettings.fieldSoftness).toBe(defaultLiquidGlassSettings.fieldSoftness)
+    expect(normalizedSettings.fieldFadeMode).toBe(defaultLiquidGlassSettings.fieldFadeMode)
+  })
+
+  it('parses signed IOR values', () => {
+    const signedPreset = parseLiquidGlassPreset(
+      JSON.stringify({
+        ...defaultLiquidGlassSettings,
+        ior: -0.65,
+      }),
+    )
+
+    expect(signedPreset.ior).toBe(-0.65)
   })
 
   it('rejects presets with missing settings', () => {
@@ -92,6 +110,17 @@ describe('liquid glass settings', () => {
 
     expect(() => parseLiquidGlassPreset(JSON.stringify(unsafePreset))).toThrow(
       'Setting out of range: fieldSoftness',
+    )
+  })
+
+  it('rejects unknown center-to-edge fade modes', () => {
+    const unsafePreset = {
+      ...defaultLiquidGlassSettings,
+      fieldFadeMode: 4,
+    }
+
+    expect(() => parseLiquidGlassPreset(JSON.stringify(unsafePreset))).toThrow(
+      'Setting out of range: fieldFadeMode',
     )
   })
 })

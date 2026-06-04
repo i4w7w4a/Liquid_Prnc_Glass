@@ -50,6 +50,7 @@ Implemented settings:
 - `fieldEnabled`;
 - `fieldStart`;
 - `fieldSoftness`;
+- `fieldFadeMode`;
 - `fieldCurve`;
 - `fieldStrength`.
 
@@ -63,6 +64,40 @@ fieldMask = pow(softRamp * longRamp, fieldCurve)
 ```
 
 This keeps the center quiet and grows refraction toward the image bounds.
+
+## Current Task: Master Field Fade + Signed IOR
+
+Status:
+
+```txt
+implemented
+```
+
+Problem:
+
+`fieldSoftness` softened the field ramp, but not every optical contribution. Strong refraction, dispersion, darkening, and highlights could still reveal a hard transition.
+
+Implementation contract:
+
+- compute the clean source color first;
+- compute the optical color separately;
+- blend the entire optical result back into the source with a final `masterFade`;
+- expose two fade modes for A/B testing;
+- redefine IOR as signed optical power where `0` is clean and negative values reverse refraction;
+- keep older default presets visually close to the previous strength.
+
+Implemented fade modes:
+
+- `fieldFadeMode: 0` - optical mask;
+- `fieldFadeMode: 1` - source dissolve.
+
+Signed IOR:
+
+```glsl
+signedOpticalPower(ior) = ior * 0.18032787
+```
+
+This makes `0` neutral while keeping the old default `ior: 1.22` near its previous optical pull.
 
 ## Task Backlog
 

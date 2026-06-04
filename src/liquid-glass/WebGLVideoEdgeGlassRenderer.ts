@@ -37,6 +37,7 @@ uniform float uHighlightStrength;
 uniform float uFieldEnabled;
 uniform float uFieldStart;
 uniform float uFieldSoftness;
+uniform float uFieldFadeMode;
 uniform float uFieldCurve;
 uniform float uFieldStrength;
 
@@ -73,6 +74,15 @@ vec3 sampleDispersedVideo(vec2 uv, vec2 refractOffset, float chroma) {
   return color;
 }
 
+float smootherstep01(float x) {
+  x = clamp(x, 0.0, 1.0);
+  return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+}
+
+float signedOpticalPower(float ior) {
+  return ior * 0.18032787;
+}
+
 void main() {
   float aspect = uResolution.x / max(uResolution.y, 1.0);
   vec2 aspectCorrection = vec2(aspect, 1.0);
@@ -96,29 +106,32 @@ void main() {
     float edgeTravel = mix(ellipseTravel, rectTravel, edgeBlend * 0.16);
     float fieldStart = clamp(uFieldStart, 0.0, 0.9);
     float fieldSoftness = clamp(uFieldSoftness, 0.04, 1.0);
-    float fieldEnd = min(1.22, fieldStart + fieldSoftness);
-    float softRamp = smoothstep(fieldStart, max(fieldStart + 0.02, fieldEnd), edgeTravel);
+    float fieldCurve = clamp(uFieldCurve, 0.35, 6.0);
+    float fadeProgress = clamp((edgeTravel - fieldStart) / max(fieldSoftness, 0.001), 0.0, 1.0);
     float longRamp = smoothstep(max(0.0, fieldStart - fieldSoftness * 0.45), 1.18, edgeTravel);
-    float fieldMask = pow(softRamp * longRamp, clamp(uFieldCurve, 0.35, 6.0));
+    float maskFade = pow(smoothstep(0.0, 1.0, fadeProgress) * longRamp, fieldCurve);
+    float dissolveFade = pow(smootherstep01(fadeProgress), max(0.6, fieldCurve * 0.82)) * longRamp;
+    float masterFade = mix(maskFade, dissolveFade, step(0.5, uFieldFadeMode));
 
     vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
     float fieldStrength = clamp(uFieldStrength, 0.0, 2.5);
-    float pull = (uIOR - 1.0) * fieldMask * fieldStrength * (0.055 + thickness * 0.38);
+    float pull = signedOpticalPower(uIOR) * masterFade * fieldStrength * (0.055 + thickness * 0.38);
     vec2 refractOffset = normal * pull / aspectCorrection;
-    vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
-    float edgeMask = smoothstep(max(fieldStart + fieldSoftness * 0.65, 0.52), 1.2, edgeTravel) * fieldMask;
+    vec3 baseColor = sampleVideo(vUv);
+    vec3 opticalColor = sampleDispersedVideo(vUv, refractOffset, chroma);
+    float edgeMask = smoothstep(max(fieldStart + fieldSoftness * 0.65, 0.52), 1.2, edgeTravel) * masterFade;
     float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * edgeMask;
     float lowerLip = smoothstep(0.58, 1.0, vUv.y) * edgeMask;
     float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.05 + vUv.y * 0.26))) * edgeMask;
     float highlight = (rimLight * 0.72 + lowerLip * 0.24 + sweep * 0.12) * uHighlightStrength;
     vec3 highlightColor = vec3(0.78, 1.0, 0.84) * rimLight + vec3(0.55, 0.25, 1.0) * lowerLip;
-    float absorption = edgeMask * clamp(uEdgeDarkening, 0.0, 1.0) * (0.28 + fieldMask * 0.42);
+    float absorption = edgeMask * clamp(uEdgeDarkening, 0.0, 1.0) * (0.28 + masterFade * 0.42);
 
-    color = mix(color, color * (1.0 - absorption), edgeMask);
-    color += highlightColor * highlight;
-    color += vec3(chroma * 0.62, chroma * 0.12, chroma * 1.0) * edgeMask * fieldMask;
+    opticalColor = mix(opticalColor, opticalColor * (1.0 - absorption), edgeMask);
+    opticalColor += highlightColor * highlight;
+    opticalColor += vec3(chroma * 0.62, chroma * 0.12, chroma * 1.0) * edgeMask * masterFade;
 
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(mix(baseColor, opticalColor, masterFade), 1.0);
     return;
   }
 
@@ -136,7 +149,7 @@ void main() {
   float borderMask = smoothstep(-0.001, thickness * 0.15, d) *
     (1.0 - smoothstep(thickness * 0.62, thickness * 1.24, d));
   float bevel = pow(1.0 - clamp(d / max(thickness, 0.001), 0.0, 1.0), 0.58);
-  float pull = (uIOR - 1.0) * borderMask * (0.07 + thickness * 0.62);
+  float pull = signedOpticalPower(uIOR) * borderMask * (0.07 + thickness * 0.62);
   vec2 refractOffset = normal * pull / aspectCorrection;
   vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
   float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * borderMask;
@@ -201,6 +214,7 @@ export class WebGLVideoEdgeGlassRenderer {
         uEdgeDarkening: { value: settings.edgeDarkening },
         uFieldCurve: { value: settings.fieldCurve },
         uFieldEnabled: { value: settings.fieldEnabled ? 1 : 0 },
+        uFieldFadeMode: { value: settings.fieldFadeMode },
         uFieldSoftness: { value: settings.fieldSoftness },
         uFieldStart: { value: settings.fieldStart },
         uFieldStrength: { value: settings.fieldStrength },
@@ -252,6 +266,7 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uEdgeDarkening.value = settings.edgeDarkening
     this.material.uniforms.uFieldCurve.value = settings.fieldCurve
     this.material.uniforms.uFieldEnabled.value = settings.fieldEnabled ? 1 : 0
+    this.material.uniforms.uFieldFadeMode.value = settings.fieldFadeMode
     this.material.uniforms.uFieldSoftness.value = settings.fieldSoftness
     this.material.uniforms.uFieldStart.value = settings.fieldStart
     this.material.uniforms.uFieldStrength.value = settings.fieldStrength
