@@ -99,6 +99,27 @@ signedOpticalPower(ior) = ior * 0.18032787
 
 This makes `0` neutral while keeping the old default `ior: 1.22` near its previous optical pull.
 
+## Current Task: Integration Brief Export
+
+Status:
+
+```txt
+implemented
+```
+
+Problem:
+
+Copying a preset alone is not enough for another agent. The receiving project needs the numeric preset, the shader contract, the repository link, and the acceptance checks in one handoff.
+
+Implementation contract:
+
+- generate a reusable Markdown brief from the active preset;
+- include the GitHub repository URL;
+- include the master fade and signed IOR formulas;
+- keep the target generic as an object/source, not one fixed media type;
+- show the generated brief in the export textarea even if clipboard access is blocked;
+- prove the generated brief does not use narrow source wording.
+
 ## Task Backlog
 
 ### 1. Shape Geometry Picker

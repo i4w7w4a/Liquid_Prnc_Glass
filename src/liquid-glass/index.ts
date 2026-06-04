@@ -1,4 +1,5 @@
 export { WebGLVideoEdgeGlass } from './WebGLVideoEdgeGlass'
+export { generateLiquidGlassIntegrationBrief } from './integrationBrief'
 export {
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,

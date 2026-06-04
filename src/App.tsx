@@ -5,6 +5,7 @@ import {
   WebGLVideoEdgeGlass,
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,
+  generateLiquidGlassIntegrationBrief,
   liquidGlassControls,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
@@ -32,6 +33,8 @@ const uiCopy = {
   en: {
     coreOptics: 'Core optics',
     centerField: 'Center field',
+    brief: 'Brief',
+    briefCopied: 'Brief copied',
     copy: 'Copy',
     copied: 'Copied',
     currentPreset: 'Current preset',
@@ -44,13 +47,17 @@ const uiCopy = {
     failed: 'Failed',
     import: 'Import',
     imported: 'Imported',
+    integrationBrief: 'Integration brief',
     invalid: 'Invalid',
+    preset: 'Preset',
     reset: 'Reset',
     subtitle: 'WebGL / VideoTexture / SDF / GLSL',
   },
   ru: {
     coreOptics: 'Оптика',
     centerField: 'Поле от центра',
+    brief: 'ТЗ',
+    briefCopied: 'ТЗ скопировано',
     copy: 'Копия',
     copied: 'Скопировано',
     currentPreset: 'Текущий пресет',
@@ -63,7 +70,9 @@ const uiCopy = {
     failed: 'Ошибка',
     import: 'Импорт',
     imported: 'Импортировано',
+    integrationBrief: 'ТЗ для агента',
     invalid: 'Неверно',
+    preset: 'Пресет',
     reset: 'Сброс',
     subtitle: 'WebGL / VideoTexture / SDF / GLSL',
   },
@@ -186,11 +195,18 @@ function App() {
   const [language, setLanguage] = useState<Language>('en')
   const [settings, setSettings] = useState<LiquidGlassSettings>(defaultLiquidGlassSettings)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [briefState, setBriefState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [exportView, setExportView] = useState<'brief' | 'preset'>('preset')
   const [importState, setImportState] = useState<'idle' | 'imported' | 'invalid'>('idle')
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
   const presetJson = useMemo(() => serializeLiquidGlassPreset(activeSettings), [activeSettings])
+  const integrationBrief = useMemo(
+    () => generateLiquidGlassIntegrationBrief(activeSettings),
+    [activeSettings],
+  )
   const [presetDraft, setPresetDraft] = useState(presetJson)
   const copy = uiCopy[language]
+  const exportText = exportView === 'brief' ? integrationBrief : presetDraft
 
   useEffect(() => {
     setPresetDraft(presetJson)
@@ -202,6 +218,7 @@ function App() {
       [key]: value,
     }))
     setCopyState('idle')
+    setBriefState('idle')
     setImportState('idle')
   }
 
@@ -211,6 +228,7 @@ function App() {
       fieldEnabled: value,
     }))
     setCopyState('idle')
+    setBriefState('idle')
     setImportState('idle')
   }
 
@@ -220,22 +238,36 @@ function App() {
       fieldFadeMode: value,
     }))
     setCopyState('idle')
+    setBriefState('idle')
     setImportState('idle')
   }
 
-  const copyPreset = async () => {
+  const copyCurrentExport = async () => {
     try {
-      await navigator.clipboard.writeText(presetJson)
+      await navigator.clipboard.writeText(exportView === 'brief' ? integrationBrief : presetJson)
       setCopyState('copied')
     } catch {
       setCopyState('failed')
     }
   }
 
+  const copyIntegrationBrief = async () => {
+    setExportView('brief')
+
+    try {
+      await navigator.clipboard.writeText(integrationBrief)
+      setBriefState('copied')
+    } catch {
+      setBriefState('failed')
+    }
+  }
+
   const importPreset = () => {
     try {
       setSettings(parseLiquidGlassPreset(presetDraft))
+      setExportView('preset')
       setCopyState('idle')
+      setBriefState('idle')
       setImportState('imported')
     } catch {
       setImportState('invalid')
@@ -244,7 +276,9 @@ function App() {
 
   const resetPreset = () => {
     setSettings(defaultLiquidGlassSettings)
+    setExportView('preset')
     setCopyState('idle')
+    setBriefState('idle')
     setImportState('idle')
   }
 
@@ -378,19 +412,32 @@ function App() {
         </div>
         <div className="preset-box">
           <div className="preset-box__head">
-            <span>{copy.currentPreset}</span>
+            <span>{exportView === 'brief' ? copy.integrationBrief : copy.currentPreset}</span>
             <span className="preset-box__actions">
-              <button onClick={importPreset} type="button">
-                {importState === 'imported'
-                  ? copy.imported
-                  : importState === 'invalid'
-                    ? copy.invalid
-                    : copy.import}
-              </button>
+              {exportView === 'brief' ? (
+                <button onClick={() => setExportView('preset')} type="button">
+                  {copy.preset}
+                </button>
+              ) : (
+                <button onClick={importPreset} type="button">
+                  {importState === 'imported'
+                    ? copy.imported
+                    : importState === 'invalid'
+                      ? copy.invalid
+                      : copy.import}
+                </button>
+              )}
               <button onClick={resetPreset} type="button">
                 {copy.reset}
               </button>
-              <button onClick={copyPreset} type="button">
+              <button onClick={copyIntegrationBrief} type="button">
+                {briefState === 'copied'
+                  ? copy.briefCopied
+                  : briefState === 'failed'
+                    ? copy.failed
+                    : copy.brief}
+              </button>
+              <button onClick={copyCurrentExport} type="button">
                 {copyState === 'copied'
                   ? copy.copied
                   : copyState === 'failed'
@@ -402,11 +449,16 @@ function App() {
           <textarea
             aria-label="Current Liquid_Prnc_Glass preset"
             onChange={(event) => {
+              if (exportView === 'brief') {
+                return
+              }
+
               setPresetDraft(event.currentTarget.value)
               setImportState('idle')
             }}
+            readOnly={exportView === 'brief'}
             spellCheck={false}
-            value={presetDraft}
+            value={exportText}
           />
         </div>
       </aside>
