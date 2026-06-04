@@ -34,6 +34,10 @@ uniform float uCornerRadius;
 uniform float uDispersion;
 uniform float uEdgeDarkening;
 uniform float uHighlightStrength;
+uniform float uFieldEnabled;
+uniform float uFieldStart;
+uniform float uFieldCurve;
+uniform float uFieldStrength;
 
 varying vec2 vUv;
 
@@ -60,6 +64,14 @@ vec3 sampleVideo(vec2 uv) {
   return texture2D(uVideoTexture, clamp(coverUv(uv), vec2(0.001), vec2(0.999))).rgb;
 }
 
+vec3 sampleDispersedVideo(vec2 uv, vec2 refractOffset, float chroma) {
+  vec3 color;
+  color.r = sampleVideo(uv + refractOffset * (1.0 + chroma * 3.5)).r;
+  color.g = sampleVideo(uv + refractOffset).g;
+  color.b = sampleVideo(uv + refractOffset * (1.0 - chroma * 3.5)).b;
+  return color;
+}
+
 void main() {
   float aspect = uResolution.x / max(uResolution.y, 1.0);
   vec2 aspectCorrection = vec2(aspect, 1.0);
@@ -68,6 +80,44 @@ void main() {
   float radius = clamp(uCornerRadius, 0.0, 0.34);
   vec2 innerSize = vec2(max(0.001, 0.5 * aspect - thickness * aspect), max(0.001, 0.5 - thickness));
   float d = sdRoundedBox(p, innerSize, radius);
+  float chroma = clamp(uDispersion, 0.0, 0.12);
+  vec2 lightDirection = normalize(vec2(-0.46, -0.89));
+
+  if (uFieldEnabled > 0.5) {
+    vec2 centerVector = (vUv - 0.5) * aspectCorrection;
+    float edgeTravel = max(
+      abs(centerVector.x) / max(0.5 * aspect, 0.001),
+      abs(centerVector.y) / 0.5
+    );
+    float fieldStart = clamp(uFieldStart, 0.0, 0.9);
+    float fieldMask = smoothstep(fieldStart, 1.0, edgeTravel);
+    fieldMask = pow(fieldMask, clamp(uFieldCurve, 0.35, 6.0));
+
+    if (fieldMask < 0.0005) {
+      gl_FragColor = vec4(sampleVideo(vUv), 1.0);
+      return;
+    }
+
+    vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
+    float fieldStrength = clamp(uFieldStrength, 0.0, 2.5);
+    float pull = (uIOR - 1.0) * fieldMask * fieldStrength * (0.055 + thickness * 0.38);
+    vec2 refractOffset = normal * pull / aspectCorrection;
+    vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
+    float edgeMask = smoothstep(max(fieldStart + 0.08, 0.42), 1.0, edgeTravel) * fieldMask;
+    float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * edgeMask;
+    float lowerLip = smoothstep(0.58, 1.0, vUv.y) * edgeMask;
+    float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.05 + vUv.y * 0.26))) * edgeMask;
+    float highlight = (rimLight * 0.72 + lowerLip * 0.24 + sweep * 0.12) * uHighlightStrength;
+    vec3 highlightColor = vec3(0.78, 1.0, 0.84) * rimLight + vec3(0.55, 0.25, 1.0) * lowerLip;
+    float absorption = edgeMask * clamp(uEdgeDarkening, 0.0, 1.0) * (0.28 + fieldMask * 0.42);
+
+    color = mix(color, color * (1.0 - absorption), edgeMask);
+    color += highlightColor * highlight;
+    color += vec3(chroma * 0.62, chroma * 0.12, chroma * 1.0) * edgeMask * fieldMask;
+
+    gl_FragColor = vec4(color, 1.0);
+    return;
+  }
 
   if (d < -0.001) {
     gl_FragColor = vec4(sampleVideo(vUv), 1.0);
@@ -85,14 +135,7 @@ void main() {
   float bevel = pow(1.0 - clamp(d / max(thickness, 0.001), 0.0, 1.0), 0.58);
   float pull = (uIOR - 1.0) * borderMask * (0.07 + thickness * 0.62);
   vec2 refractOffset = normal * pull / aspectCorrection;
-
-  float chroma = clamp(uDispersion, 0.0, 0.12);
-  vec3 color;
-  color.r = sampleVideo(vUv + refractOffset * (1.0 + chroma * 3.5)).r;
-  color.g = sampleVideo(vUv + refractOffset).g;
-  color.b = sampleVideo(vUv + refractOffset * (1.0 - chroma * 3.5)).b;
-
-  vec2 lightDirection = normalize(vec2(-0.46, -0.89));
+  vec3 color = sampleDispersedVideo(vUv, refractOffset, chroma);
   float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * borderMask;
   float lowerLip = smoothstep(0.56, 1.0, vUv.y) * borderMask;
   float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.055 + vUv.y * 0.28)));
@@ -153,6 +196,10 @@ export class WebGLVideoEdgeGlassRenderer {
         uCornerRadius: { value: settings.cornerRadius },
         uDispersion: { value: settings.dispersion },
         uEdgeDarkening: { value: settings.edgeDarkening },
+        uFieldCurve: { value: settings.fieldCurve },
+        uFieldEnabled: { value: settings.fieldEnabled ? 1 : 0 },
+        uFieldStart: { value: settings.fieldStart },
+        uFieldStrength: { value: settings.fieldStrength },
         uHighlightStrength: { value: settings.highlightStrength },
         uIOR: { value: settings.ior },
         uResolution: { value: new THREE.Vector2(1, 1) },
@@ -199,6 +246,10 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uCornerRadius.value = settings.cornerRadius
     this.material.uniforms.uDispersion.value = settings.dispersion
     this.material.uniforms.uEdgeDarkening.value = settings.edgeDarkening
+    this.material.uniforms.uFieldCurve.value = settings.fieldCurve
+    this.material.uniforms.uFieldEnabled.value = settings.fieldEnabled ? 1 : 0
+    this.material.uniforms.uFieldStart.value = settings.fieldStart
+    this.material.uniforms.uFieldStrength.value = settings.fieldStrength
     this.material.uniforms.uHighlightStrength.value = settings.highlightStrength
     this.resize()
   }

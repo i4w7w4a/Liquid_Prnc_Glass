@@ -59,6 +59,40 @@ vec2 refractOffset = normal * pull / aspectCorrection;
 
 Higher `uIOR` means stronger bending.
 
+## Center-To-Edge Field
+
+The shader now has two optical paths:
+
+```txt
+edge mode  -> clean center + SDF border refraction
+field mode -> invisible center + smooth center-to-edge refraction
+```
+
+Field mode uses normalized rectangular travel from the center toward the image bounds:
+
+```glsl
+float edgeTravel = max(
+  abs(centerVector.x) / max(0.5 * aspect, 0.001),
+  abs(centerVector.y) / 0.5
+);
+```
+
+Then it turns that travel into a mask:
+
+```glsl
+float fieldMask = smoothstep(uFieldStart, 1.0, edgeTravel);
+fieldMask = pow(fieldMask, uFieldCurve);
+```
+
+Meaning:
+
+- `uFieldStart` protects the clean center;
+- `smoothstep()` avoids a hard visible seam;
+- `uFieldCurve` controls how gently the effect wakes up;
+- `uFieldStrength` controls the final refraction pull.
+
+Field mode still samples the same video texture. It changes the refraction field, not the media pipeline.
+
 ## Dispersion
 
 RGB channels sample at different offsets:

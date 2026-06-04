@@ -150,6 +150,7 @@ The component owns a hidden video element and a canvas. The renderer owns the Th
 - [Research Packs](docs/research-packs.md)
 - [Research: Liquid Glass Over Video](docs/research-liquid-glass.md)
 - [Case Pack 02: Kube.io Math On WebGL GPU](docs/case-kube-io-math-webgl.md)
+- [Lab Roadmap](docs/lab-roadmap.md)
 - [Shader](docs/shader.md)
 - [Tuning](docs/tuning.md)
 - [Moderation Guide](docs/moderation-guide.md)
