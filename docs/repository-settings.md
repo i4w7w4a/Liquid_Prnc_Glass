@@ -13,7 +13,7 @@ Standalone WebGL/GLSL optics lab for reusable liquid-glass edge refraction on vi
 Website:
 
 ```text
-http://liquid-prince.online/
+https://liquid-prince.online/
 ```
 
 Topics:
@@ -69,9 +69,10 @@ If GitHub does not expose category creation through the CLI/API, create `Shader 
 
 After the repository presentation lands:
 
-1. Choose and commit a real license.
-2. Create release `v0.1.0`.
-3. Attach a short demo video only if it is optimized and rights-safe.
+1. Run `npm run test`.
+2. Run `npm run build`.
+3. Create the next semantic release, currently `v0.2.0`.
+4. Attach only rights-safe visual assets.
 
 ## License
 

@@ -2,7 +2,7 @@ import type { LiquidGlassSettings } from './settings'
 import { serializeLiquidGlassPreset } from './settings'
 
 const liquidGlassRepositoryUrl = 'https://github.com/i4w7w4a/Liquid_Prnc_Glass'
-const liquidGlassProjectSiteUrl = 'http://liquid-prince.online/'
+const liquidGlassProjectSiteUrl = 'https://liquid-prince.online/'
 
 function getFadeModeLabel(fieldFadeMode: number) {
   return fieldFadeMode === 1 ? 'source dissolve' : 'optical mask'
@@ -76,11 +76,20 @@ ${presetJson}
 Current fade mode:
 ${settings.fieldFadeMode} - ${fadeModeLabel}
 
+Core optics:
+ior ${settings.ior}; edgeThickness ${settings.edgeThickness}; cornerRadius ${settings.cornerRadius}; dispersion ${settings.dispersion}; edgeDarkening ${settings.edgeDarkening}; highlightStrength ${settings.highlightStrength}; pixelRatio ${settings.pixelRatio}
+
+Center field:
+${settings.fieldEnabled ? 'enabled' : 'disabled'}; start ${settings.fieldStart}; softness ${settings.fieldSoftness}; fade mode ${settings.fieldFadeMode} - ${fadeModeLabel}; curve ${settings.fieldCurve}; strength ${settings.fieldStrength}
+
 Shape geometry:
 ${settings.shapeType} - ${shapeLabel}; shapeWarp ${settings.shapeWarp}
 
 Flow field:
 ${settings.flowEnabled ? 'enabled' : 'disabled'}; mode ${settings.flowMode} - ${flowModeLabel}; speed ${settings.flowSpeed}; strength ${settings.flowStrength}; scale ${settings.flowScale}; turbulence ${settings.flowTurbulence}; boundary damping ${settings.flowBoundaryDamping}; layer mix ${settings.flowLayerMix}
+
+Effect regions:
+top ${settings.regionTop}; right ${settings.regionRight}; bottom ${settings.regionBottom}; left ${settings.regionLeft}; width ${settings.regionWidth}; softness ${settings.regionSoftness}
 
 Color correction:
 exposure ${settings.exposure}; brightness ${settings.brightness}; contrast ${settings.contrast}; saturation ${settings.saturation}; temperature ${settings.temperature}; tint ${settings.tint}; gamma ${settings.gamma}

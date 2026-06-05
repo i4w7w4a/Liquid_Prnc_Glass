@@ -46,7 +46,7 @@ describe('integration brief export', () => {
     const brief = generateLiquidGlassIntegrationBrief(tunedPreset)
 
     expect(brief).toContain('https://github.com/i4w7w4a/Liquid_Prnc_Glass')
-    expect(brief).toContain('http://liquid-prince.online/')
+    expect(brief).toContain('https://liquid-prince.online/')
     expect(brief).toContain('"ior": -1.84')
     expect(brief).toContain('"fieldFadeMode": 0')
     expect(brief).toContain('"shapeType": 8')
@@ -55,6 +55,9 @@ describe('integration brief export', () => {
     expect(brief).toContain('Shape geometry')
     expect(brief).toContain('Flow field')
     expect(brief).toContain('Color correction')
+    expect(brief).toContain('Core optics')
+    expect(brief).toContain('Center field')
+    expect(brief).toContain('Effect regions')
     expect(brief).toContain('linearToOutputTexel')
     expect(brief).toContain('sRGBTransferEOTF')
     expect(brief).toContain('flowGradient')
@@ -63,6 +66,20 @@ describe('integration brief export', () => {
     expect(brief).toContain('float signedOpticalPower(float ior)')
     expect(brief).toContain('finalColor = mix(baseColor, opticalColor, masterFade)')
     expect(brief).toContain('объект')
+  })
+
+  it('lists every control group with its active values outside the preset JSON', () => {
+    const brief = generateLiquidGlassIntegrationBrief(tunedPreset)
+
+    expect(brief).toContain(
+      'Core optics:\nior -1.84; edgeThickness 0.02; cornerRadius 0.1; dispersion 0.046; edgeDarkening 0.48; highlightStrength 0.53; pixelRatio 2.25',
+    )
+    expect(brief).toContain(
+      'Center field:\nenabled; start 0.42; softness 0.42; fade mode 0 - optical mask; curve 0.5; strength 2',
+    )
+    expect(brief).toContain(
+      'Effect regions:\ntop true; right true; bottom true; left true; width 0.34; softness 0.12',
+    )
   })
 
   it('keeps the exported handoff generic for any rendered source object', () => {

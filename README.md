@@ -22,11 +22,11 @@
 
 <div align="center">
 
-<a href="http://liquid-prince.online/">
+<a href="https://liquid-prince.online/">
   <img alt="Open the live Liquid Prnc Glass lab" src="https://img.shields.io/badge/OPEN%20THE%20LIVE%20LAB-liquid--prince.online-9FFFCB?style=for-the-badge&labelColor=0F0E16">
 </a>
 
-**[liquid-prince.online](http://liquid-prince.online/)**
+**[liquid-prince.online](https://liquid-prince.online/)**
 
 `live WebGL optics lab` · `tune the shader` · `export the rendered glass`
 
@@ -130,8 +130,16 @@ Key files:
 | `dispersion` | RGB channel separation along the optical normal. |
 | `edgeDarkening` | Absorption/darkening through the glass edge. |
 | `highlightStrength` | Rim, lower-lip, and sweep highlight intensity. |
+| `exposure` / `brightness` | Subtle post-optical source matching. Brightness is intentionally narrow. |
+| `contrast` / `saturation` | Neutral color correction after optical composition. |
+| `temperature` / `tint` / `gamma` | Fine display-style color matching controls. |
 | `fieldStart` / `fieldSoftness` | Clean-center protection and fade width for center-to-edge mode. |
 | `fieldCurve` / `fieldStrength` | How the field wakes up and how hard it pulls. |
+| `fieldFadeMode` / `fieldEnabled` | Center-field fade method and enable state. |
+| `shapeType` / `shapeWarp` | Selectable SDF geometry and deterministic irregularity. |
+| `flowEnabled` / `flowMode` | Optical flow enable state and direction/mode. |
+| `flowSpeed` / `flowStrength` / `flowScale` | Temporal, normal, and spatial flow controls. |
+| `flowTurbulence` / `flowBoundaryDamping` / `flowLayerMix` | Organic breakup, boundary damping, and second-layer mix. |
 | `regionTop` / `regionRight` / `regionBottom` / `regionLeft` | Select which edge strips receive the optical effect. |
 | `regionWidth` / `regionSoftness` | Width and feathering of selected effect regions. |
 | `pixelRatio` | GPU render scale, capped for practical browser use. |
@@ -146,11 +154,28 @@ Default preset:
   "dispersion": 0.018,
   "edgeDarkening": 0.34,
   "highlightStrength": 0.72,
+  "exposure": 0,
+  "brightness": 0,
+  "contrast": 1,
+  "saturation": 1,
+  "temperature": 0,
+  "tint": 0,
+  "gamma": 1,
   "fieldStart": 0.22,
   "fieldSoftness": 0.42,
   "fieldFadeMode": 0,
   "fieldCurve": 2.4,
   "fieldStrength": 1,
+  "shapeType": 0,
+  "shapeWarp": 0.35,
+  "flowEnabled": false,
+  "flowMode": 0,
+  "flowSpeed": 1,
+  "flowStrength": 0.35,
+  "flowScale": 2.4,
+  "flowTurbulence": 0.35,
+  "flowBoundaryDamping": 0.65,
+  "flowLayerMix": 0.55,
   "regionTop": true,
   "regionRight": true,
   "regionBottom": true,
@@ -185,11 +210,28 @@ const settings: LiquidGlassSettings = {
   dispersion: 0.018,
   edgeDarkening: 0.34,
   highlightStrength: 0.72,
+  exposure: 0,
+  brightness: 0,
+  contrast: 1,
+  saturation: 1,
+  temperature: 0,
+  tint: 0,
+  gamma: 1,
   fieldStart: 0.22,
   fieldSoftness: 0.42,
   fieldFadeMode: 0,
   fieldCurve: 2.4,
   fieldStrength: 1,
+  shapeType: 0,
+  shapeWarp: 0.35,
+  flowEnabled: false,
+  flowMode: 0,
+  flowSpeed: 1,
+  flowStrength: 0.35,
+  flowScale: 2.4,
+  flowTurbulence: 0.35,
+  flowBoundaryDamping: 0.65,
+  flowLayerMix: 0.55,
   regionTop: true,
   regionRight: true,
   regionBottom: true,

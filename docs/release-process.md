@@ -75,5 +75,5 @@ Use simple semantic versioning:
 Current first release target:
 
 ```text
-v0.1.0
+v0.2.0
 ```

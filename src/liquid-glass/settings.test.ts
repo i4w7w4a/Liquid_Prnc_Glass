@@ -20,6 +20,12 @@ describe('liquid glass settings', () => {
     expect(serializeLiquidGlassPreset(defaultLiquidGlassSettings)).toContain('"contrast": 1')
   })
 
+  it('serializes every current preset setting key', () => {
+    const serializedPreset = JSON.parse(serializeLiquidGlassPreset(defaultLiquidGlassSettings))
+
+    expect(Object.keys(serializedPreset).sort()).toEqual(Object.keys(defaultLiquidGlassSettings).sort())
+  })
+
   it('keeps the center-to-edge field disabled by default', () => {
     expect(defaultLiquidGlassSettings.fieldEnabled).toBe(false)
     expect(defaultLiquidGlassSettings.fieldStart).toBe(0.22)

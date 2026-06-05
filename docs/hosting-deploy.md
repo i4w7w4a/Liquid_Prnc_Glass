@@ -24,7 +24,7 @@ Do not copy this file into the project and do not commit it.
   "username": "FTP username",
   "password": "FTP password",
   "remoteRoot": "www/liquid-prince.online",
-  "publicUrl": "http://liquid-prince.online/"
+  "publicUrl": "https://liquid-prince.online/"
 }
 ```
 

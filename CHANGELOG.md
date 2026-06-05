@@ -6,8 +6,14 @@ This project follows a human-readable changelog style.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.0 - 2026-06-06
+
 ### Color
 
+- Added explicit `sRGBTransferEOTF` decode for moving media textures before optical composition so the neutral source stays close to the original.
+- Tightened `brightness` from a destructive `-1..1` lift to a fine `-0.25..0.25` tuning range with a `0.005` step.
 - Fixed the shader output color-space path so sampled source colors are written through `linearToOutputTexel` instead of raw `gl_FragColor`.
 - Fixed a shader compile regression caused by duplicating Three.js color-space parser functions in the custom fragment shader.
 - Added a compact Color panel with exposure, brightness, contrast, saturation, temperature, tint, and gamma controls.
@@ -19,6 +25,11 @@ This project follows a human-readable changelog style.
 - Moved starter demo playback control out of the WebGL renderer and into the React source layer with autoplay retry on focus and visibility return.
 - Added a source-panel button to swap the starter MP4 demo for a still poster, reducing decode load when motion is not needed.
 - Added a restore path that remounts the starter motion source so the demo can recover from a paused or blocked state.
+
+### Controls
+
+- Changed the lower left-rail quick button into a one-click collapse command for all control groups.
+- Changed the color quick button to collapse the panel first and then open only Color controls.
 
 ### Flow
 
@@ -36,9 +47,13 @@ This project follows a human-readable changelog style.
 
 - Set MP4 render duration from motion source metadata by default while keeping the seconds field editable.
 - Raised the deliberate MP4 render duration bound from 30 seconds to 600 seconds.
+- Added PNG frame render support for still sources.
 
 ### Documentation
 
+- Updated project links and integration brief output to use the HTTPS public site.
+- Expanded the generated integration brief with readable values for core optics, center field, regions, shape, flow, and color.
+- Added the source color-space decode rule to the integration handoff.
 - Rebuilt the repository README as a human-first WebGL/GLSL optics lab introduction.
 - Added visual proof assets for README presentation.
 - Added documentation pages for overview, shader contract, export, integration, roadmap, preset guidance, source regions, troubleshooting, repository settings, and Russian overview.

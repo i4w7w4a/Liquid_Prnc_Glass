@@ -30,8 +30,10 @@ It includes:
 
 - repository URL;
 - active preset JSON;
+- readable value summaries for core optics, center field, shape, flow, regions, and color;
 - signed IOR rule;
 - center-to-edge field formula;
+- source color-space decode rule;
 - refraction sampling;
 - final composition rule;
 - acceptance checks.
@@ -46,9 +48,10 @@ When moving the effect elsewhere:
 2. Preserve signed IOR behavior.
 3. Preserve shared master fade.
 4. Preserve region masking inside the optical pipeline.
-5. Preserve cover-fit source sizing.
-6. Preserve resize updates for resolution and aspect uniforms.
-7. Verify browser console and GPU resource disposal.
+5. Preserve source color-space decode and `linearToOutputTexel` output.
+6. Preserve cover-fit source sizing.
+7. Preserve resize updates for resolution and aspect uniforms.
+8. Verify browser console and GPU resource disposal.
 
 ## Non-Goals
 

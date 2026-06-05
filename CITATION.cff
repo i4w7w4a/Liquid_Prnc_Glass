@@ -5,7 +5,7 @@ type: software
 authors:
   - name: "i4w7w4a"
 repository-code: "https://github.com/i4w7w4a/Liquid_Prnc_Glass"
-url: "http://liquid-prince.online/"
+url: "https://liquid-prince.online/"
 abstract: "A standalone WebGL/GLSL optics lab for reusable edge refraction on video, image, and other visual sources."
 keywords:
   - WebGL

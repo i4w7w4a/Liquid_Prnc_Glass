@@ -17,6 +17,8 @@ The renderer must preserve these rules:
 - The clean source color is computed before the optical color.
 - Refraction, dispersion, darkening, and highlights fade through the same master mask.
 - Region selection affects the optical result, not only final color.
+- Moving media textures without hardware sRGB unpack are decoded with `sRGBTransferEOTF` before optical math.
+- Color correction is applied after optical composition and before `linearToOutputTexel`.
 - Resize updates `uResolution` and source aspect uniforms.
 - The shader never renders UI text.
 
@@ -24,6 +26,7 @@ The renderer must preserve these rules:
 
 ```text
 source texture
+  -> working color-space decode
   -> clean source sample
   -> optical field / SDF region
   -> optional flow normal perturbation
@@ -32,6 +35,8 @@ source texture
   -> edge darkening
   -> rim/lip/sweep highlights
   -> shared mask/fade composition
+  -> color correction
+  -> linearToOutputTexel
 ```
 
 ## Signed IOR
@@ -144,6 +149,36 @@ finalColor = mix(baseColor, opticalColor, masterFade);
 ```
 
 Do not leave chroma, highlights, or darkening outside that fade.
+
+## Color Space And Color Correction
+
+The renderer writes through Three.js output color-space conversion:
+
+```glsl
+gl_FragColor = linearToOutputTexel(vec4(applyColorGrade(finalColor), 1.0));
+```
+
+For moving media sources, Three.js does not always provide hardware sRGB unpack on custom shaders.
+The shader therefore keeps an explicit source decode switch:
+
+```glsl
+vec4 texel = texture2D(uSourceTexture, clamp(coverUv(vUv), vec2(0.001), vec2(0.999)));
+vec3 sourceColor = uDecodeSourceTexture > 0.5 ? sRGBTransferEOTF(texel).rgb : texel.rgb;
+```
+
+`applyColorGrade` must remain neutral at:
+
+```text
+exposure 0
+brightness 0
+contrast 1
+saturation 1
+temperature 0
+tint 0
+gamma 1
+```
+
+`brightness` is a fine matching control, not a full crush/blowout lever.
 
 ## Effect Regions
 

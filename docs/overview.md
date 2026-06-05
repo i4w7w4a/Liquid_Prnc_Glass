@@ -4,7 +4,7 @@ Liquid Prnc Glass is a standalone WebGL/GLSL optics lab for reusable liquid-glas
 
 Project links:
 
-- Website: [http://liquid-prince.online/](http://liquid-prince.online/)
+- Website: [https://liquid-prince.online/](https://liquid-prince.online/)
 - Repository: [https://github.com/i4w7w4a/Liquid_Prnc_Glass](https://github.com/i4w7w4a/Liquid_Prnc_Glass)
 
 ## Core Statement
@@ -22,13 +22,16 @@ This project is not CSS glassmorphism, not a `backdrop-filter` trick, and not a 
 - Loads a video or image source.
 - Uploads the source as a GPU texture.
 - Keeps a clean-source path for neutral settings.
-- Computes a rounded-box SDF edge field.
+- Computes selectable SDF geometry, including regular and irregular shapes.
 - Can switch to a smooth center-to-edge optical field.
+- Can restrict the optical result to selected edge regions.
+- Can add analytic optical flow before signed IOR and dispersion sampling.
 - Applies refraction, dispersion, edge darkening, and highlights.
+- Applies neutral color correction after optical composition.
 - Lets the operator tune settings live.
 - Serializes settings as JSON.
 - Generates an integration brief for another project.
-- Exports the rendered WebGL canvas through recording or deterministic MP4 rendering.
+- Exports the rendered WebGL canvas through recording, PNG frame output, or deterministic MP4 rendering.
 
 ## What The Lab Refuses
 

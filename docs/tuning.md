@@ -65,6 +65,45 @@ Render quality.
 3    stress
 ```
 
+### Color
+
+Color controls are for matching the rendered source, not for replacing a grading tool.
+
+Neutral values:
+
+```txt
+exposure 0
+brightness 0
+contrast 1
+saturation 1
+temperature 0
+tint 0
+gamma 1
+```
+
+`brightness` is intentionally narrow: `-0.25..0.25` with a fine step. Use exposure for broader
+gain and brightness only for small lift/trap matching.
+
+### Shape geometry
+
+The shape picker changes the shader-side signed distance field, not only the icon.
+
+Regular shapes are useful for controlled interfaces. Irregular shapes are useful when the edge
+should feel less mechanical. Increase `shapeWarp` only after the base shape reads correctly.
+
+### Flow
+
+Flow perturbs the optical normal before IOR and dispersion sampling.
+
+Useful order:
+
+1. Choose a mode.
+2. Set `flowStrength` low.
+3. Adjust `flowScale`.
+4. Raise `flowSpeed`.
+5. Add `flowTurbulence` only when the motion feels too regular.
+6. Use `flowBoundaryDamping` if the mask boundary starts to show.
+
 ### Center field
 
 Field mode lets the center remain clean while the optical result grows toward the edges.
@@ -93,9 +132,12 @@ Use this order:
 3. Add edge darkening until the boundary feels physical.
 4. Add small dispersion.
 5. Add highlight strength.
-6. Enable field mode only if the edge band is not enough.
-7. Limit regions if the effect should belong to only part of the source.
-8. Raise pixel ratio only after the visual style is right.
+6. Choose shape geometry if the default rectangle is too mechanical.
+7. Enable field mode only if the edge band is not enough.
+8. Add flow after the static optical result is readable.
+9. Use color controls for final source matching.
+10. Limit regions if the effect should belong to only part of the source.
+11. Raise pixel ratio only after the visual style is right.
 
 ## Bad Signs
 

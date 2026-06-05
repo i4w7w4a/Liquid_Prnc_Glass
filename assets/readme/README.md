@@ -11,7 +11,7 @@ http://127.0.0.1:7484/
 Public site:
 
 ```text
-http://liquid-prince.online/
+https://liquid-prince.online/
 ```
 
 ## Assets

@@ -1,7 +1,7 @@
 {
   "name": "liquid_prnc_glass",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "description": "High-end WebGL video edge refraction lab built with React, TypeScript, Three.js and GLSL.",

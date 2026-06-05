@@ -9,7 +9,7 @@
 
 > Standalone WebGL/GLSL optics lab for reusable liquid-glass edge refraction.
 
-Project site: http://liquid-prince.online/  
+Project site: https://liquid-prince.online/
 Repository: https://github.com/i4w7w4a/Liquid_Prnc_Glass
 
 ## What This Release Is
