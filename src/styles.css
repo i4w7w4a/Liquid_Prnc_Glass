@@ -262,13 +262,15 @@ button {
 
 .source-toolbar,
 .source-size-mode,
+.export-actions,
 .region-presets,
 .region-grid {
   display: grid;
   gap: 6px;
 }
 
-.source-toolbar {
+.source-toolbar,
+.export-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -290,6 +292,8 @@ button {
 
 .source-toolbar button,
 .source-size-mode button,
+.export-actions button,
+.export-download,
 .region-presets button,
 .region-grid button {
   min-width: 0;
@@ -300,6 +304,8 @@ button {
   cursor: pointer;
   font-size: 9px;
   line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
 }
 
 .source-size-mode button[aria-pressed="true"],
@@ -350,6 +356,36 @@ button {
   border: 1px solid rgba(197, 254, 207, 0.16);
   color: rgba(218, 255, 226, 0.88);
   background: rgba(0, 0, 0, 0.42);
+}
+
+.export-status {
+  display: grid;
+  min-height: 29px;
+  box-sizing: border-box;
+  place-items: center;
+  border: 1px solid rgba(197, 254, 207, 0.12);
+  color: rgba(218, 255, 226, 0.76);
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 9px;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.export-status[data-state="recording"] {
+  border-color: rgba(255, 90, 142, 0.5);
+  color: rgba(255, 205, 221, 0.94);
+  box-shadow: 0 0 16px rgba(255, 40, 100, 0.2);
+}
+
+.export-status[data-state="ready"] {
+  border-color: rgba(197, 254, 207, 0.52);
+  color: #d7ffe0;
+}
+
+.export-status[data-state="failed"],
+.export-status[data-state="unsupported"] {
+  border-color: rgba(255, 150, 90, 0.48);
+  color: rgba(255, 214, 186, 0.92);
 }
 
 .fade-mode {

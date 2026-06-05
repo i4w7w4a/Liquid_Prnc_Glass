@@ -150,6 +150,38 @@ Result:
 - SDF edge mode multiplies `borderMask` by `regionMask`;
 - old presets keep full coverage by default.
 
+## Current Task: Canvas Recording Export
+
+Status:
+
+```txt
+implemented
+```
+
+Problem:
+
+The lab could tune a strong optical result, but the result still lived only inside the browser preview.
+
+Implementation contract:
+
+- record the final WebGL canvas, not the raw source;
+- expose a compact export panel with FPS, Record, Stop, and Download;
+- keep the recording result independent from optical preset JSON;
+- prefer MP4 when the browser supports it and fall back to WebM;
+- clamp FPS to a practical browser range;
+- use local machine time in exported filenames.
+
+Result:
+
+- `canvas.captureStream()` feeds `MediaRecorder`;
+- MediaRecorder options have fallback tiers for uneven browser support;
+- completed recordings become a blob download link;
+- export helper behavior is covered by unit tests.
+
+Research note:
+
+- see [Canvas Recording Export](canvas-recording-export.md).
+
 ## Task Backlog
 
 ### 1. Shape Geometry Picker

@@ -1,6 +1,13 @@
 export { WebGLVideoEdgeGlass } from './WebGLVideoEdgeGlass'
 export { generateLiquidGlassIntegrationBrief } from './integrationBrief'
 export {
+  buildRecordingOptionCandidates,
+  buildRecordingExportFilename,
+  chooseSupportedRecordingMimeType,
+  getRecordingExtension,
+  normalizeRecordingFps,
+} from './recordingExport'
+export {
   clampSourceDimension,
   resizeSourceFrameWithAspect,
   resolveNaturalSourceSize,

@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, CSSProperties } from 'react'
 import demoPoster from './assets/demo-poster.png'
 import demoVideo from './assets/demo-video.web.mp4'
 import {
+  buildRecordingOptionCandidates,
   WebGLVideoEdgeGlass,
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,
   generateLiquidGlassIntegrationBrief,
+  buildRecordingExportFilename,
+  chooseSupportedRecordingMimeType,
   liquidGlassControls,
+  normalizeRecordingFps,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
   resizeSourceFrameWithAspect,
@@ -24,6 +28,7 @@ import type {
 } from './liquid-glass'
 
 type Language = 'en' | 'ru'
+type RecordingState = 'failed' | 'idle' | 'ready' | 'recording' | 'unsupported'
 type SourceFrameMode = 'manual' | 'natural' | 'viewport'
 type RegionKey = Extract<
   LiquidGlassBooleanSettingKey,
@@ -93,8 +98,16 @@ const uiCopy = {
     copied: 'Copied',
     currentPreset: 'Current preset',
     demoSource: 'Demo',
+    downloadExport: 'Download',
     enableField: 'Enable center-to-edge field',
     effectRegions: 'Effect regions',
+    exportFailed: 'Export failed',
+    exportFps: 'FPS',
+    exportHint: 'Records the current preview in real time.',
+    exportReady: 'Export ready',
+    exportResult: 'Export result',
+    exportUnsupported: 'Export unsupported',
+    exporting: 'Recording',
     fadeDissolve: 'Source dissolve',
     fadeMask: 'Optical mask',
     fadeMethod: 'Fade method',
@@ -119,6 +132,8 @@ const uiCopy = {
     regionTopBottom: 'Top + bottom',
     regionTopOnly: 'Top',
     reset: 'Reset',
+    startExport: 'Record',
+    stopExport: 'Stop',
     source: 'Source',
     sourceHint: 'Upload an image or a moving source. Demo stays available.',
     sourceKindImage: 'Image',
@@ -137,8 +152,16 @@ const uiCopy = {
     copied: 'Скопировано',
     currentPreset: 'Текущий пресет',
     demoSource: 'Демо',
+    downloadExport: 'Скачать',
     enableField: 'Включить поле от центра к краю',
     effectRegions: 'Зоны эффекта',
+    exportFailed: 'Ошибка экспорта',
+    exportFps: 'FPS',
+    exportHint: 'Записывает текущий preview в реальном времени.',
+    exportReady: 'Экспорт готов',
+    exportResult: 'Экспорт результата',
+    exportUnsupported: 'Экспорт не поддержан',
+    exporting: 'Запись',
     fadeDissolve: 'Растворение в исходник',
     fadeMask: 'Оптическая маска',
     fadeMethod: 'Метод затухания',
@@ -163,6 +186,8 @@ const uiCopy = {
     regionTopBottom: 'Верх + низ',
     regionTopOnly: 'Верх',
     reset: 'Сброс',
+    startExport: 'Запись',
+    stopExport: 'Стоп',
     source: 'Исходник',
     sourceHint: 'Загрузи изображение или движущийся source. Демо остается доступным.',
     sourceKindImage: 'Изображение',
@@ -315,6 +340,10 @@ function App() {
   const [exportView, setExportView] = useState<'brief' | 'preset'>('preset')
   const [glassSource, setGlassSource] = useState<LiquidGlassSource>(defaultGlassSource)
   const [importState, setImportState] = useState<'idle' | 'imported' | 'invalid'>('idle')
+  const [recordingDownloadUrl, setRecordingDownloadUrl] = useState<string | null>(null)
+  const [recordingFilename, setRecordingFilename] = useState('')
+  const [recordingFps, setRecordingFps] = useState(() => normalizeRecordingFps(30))
+  const [recordingState, setRecordingState] = useState<RecordingState>('idle')
   const [sourceAspectLocked, setSourceAspectLocked] = useState(true)
   const [sourceFrameMode, setSourceFrameMode] = useState<SourceFrameMode>('viewport')
   const [sourceFrameSize, setSourceFrameSize] = useState<SourceSize>(defaultSourceSize)
@@ -324,6 +353,10 @@ function App() {
     height: window.innerHeight,
     width: window.innerWidth,
   }))
+  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingChunksRef = useRef<BlobPart[]>([])
+  const recordingStreamRef = useRef<MediaStream | null>(null)
   const sourceFileInputRef = useRef<HTMLInputElement>(null)
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
   const presetJson = useMemo(() => serializeLiquidGlassPreset(activeSettings), [activeSettings])
@@ -383,6 +416,28 @@ function App() {
       }
     }
   }, [uploadedSourceUrl])
+
+  useEffect(() => {
+    return () => {
+      if (recordingDownloadUrl) {
+        URL.revokeObjectURL(recordingDownloadUrl)
+      }
+    }
+  }, [recordingDownloadUrl])
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop()
+      }
+
+      recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
+    }
+  }, [])
+
+  const handleCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
+    exportCanvasRef.current = canvas
+  }, [])
 
   const handleSettingChange = (key: LiquidGlassSettingKey, value: number) => {
     setSettings((currentSettings) => ({
@@ -516,6 +571,113 @@ function App() {
     setBriefState('idle')
   }
 
+  const stopRecording = () => {
+    const recorder = mediaRecorderRef.current
+
+    if (recorder?.state === 'recording') {
+      recorder.stop()
+      return
+    }
+
+    recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
+    recordingStreamRef.current = null
+    mediaRecorderRef.current = null
+    setRecordingState((currentState) => (currentState === 'recording' ? 'idle' : currentState))
+  }
+
+  const startRecording = () => {
+    const canvas = exportCanvasRef.current
+
+    if (!canvas || !('captureStream' in canvas) || typeof MediaRecorder === 'undefined') {
+      setRecordingState('unsupported')
+      return
+    }
+
+    if (recordingDownloadUrl) {
+      URL.revokeObjectURL(recordingDownloadUrl)
+      setRecordingDownloadUrl(null)
+      setRecordingFilename('')
+    }
+
+    const safeRecordingFps = normalizeRecordingFps(recordingFps)
+
+    let stream: MediaStream | null = null
+    try {
+      stream = canvas.captureStream(safeRecordingFps)
+      const recordingStream = stream
+
+      const mimeType = chooseSupportedRecordingMimeType((candidate) =>
+        typeof MediaRecorder.isTypeSupported === 'function'
+          ? MediaRecorder.isTypeSupported(candidate)
+          : false,
+      )
+      const bitsPerSecond = Math.min(
+        20_000_000,
+        Math.max(2_000_000, Math.round(canvas.width * canvas.height * safeRecordingFps * 0.12)),
+      )
+
+      recordingChunksRef.current = []
+      recordingStreamRef.current = recordingStream
+
+      const recorder = buildRecordingOptionCandidates(mimeType, bitsPerSecond).reduce<MediaRecorder | null>(
+        (createdRecorder, options) => {
+          if (createdRecorder) {
+            return createdRecorder
+          }
+
+          try {
+            return new MediaRecorder(recordingStream, options)
+          } catch {
+            return null
+          }
+        },
+        null,
+      )
+
+      if (!recorder) {
+        throw new Error('MediaRecorder could not be created')
+      }
+
+      mediaRecorderRef.current = recorder
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordingChunksRef.current.push(event.data)
+        }
+      }
+      recorder.onerror = () => {
+        recordingStream.getTracks().forEach((track) => track.stop())
+        recordingStreamRef.current = null
+        mediaRecorderRef.current = null
+        setRecordingState('failed')
+      }
+      recorder.onstop = () => {
+        recordingStream.getTracks().forEach((track) => track.stop())
+        recordingStreamRef.current = null
+        mediaRecorderRef.current = null
+
+        const recorderMimeType = recorder.mimeType || mimeType
+        const blob = new Blob(recordingChunksRef.current, { type: recorderMimeType })
+
+        if (blob.size <= 0) {
+          setRecordingState('failed')
+          return
+        }
+
+        setRecordingFilename(buildRecordingExportFilename(new Date(), recorderMimeType))
+        setRecordingDownloadUrl(URL.createObjectURL(blob))
+        setRecordingState('ready')
+      }
+
+      recorder.start(250)
+      setRecordingState('recording')
+    } catch {
+      stream?.getTracks().forEach((track) => track.stop())
+      recordingStreamRef.current = null
+      mediaRecorderRef.current = null
+      setRecordingState('failed')
+    }
+  }
+
   const copyCurrentExport = async () => {
     try {
       await navigator.clipboard.writeText(exportView === 'brief' ? integrationBrief : presetJson)
@@ -563,6 +725,7 @@ function App() {
           className={`preview-stage__glass${
             sourceFrameMode === 'viewport' ? '' : ' preview-stage__glass--framed'
           }`}
+          onCanvasReady={handleCanvasReady}
           onNaturalSizeChange={handleSourceNaturalSizeChange}
           settings={activeSettings}
           source={glassSource}
@@ -671,6 +834,54 @@ function App() {
                 />
               </label>
             </div>
+          </details>
+          <details className="control-group" open>
+            <summary>{copy.exportResult}</summary>
+            <div className="source-dimensions">
+              <label>
+                <span>{copy.exportFps}</span>
+                <input
+                  max={60}
+                  min={12}
+                  onChange={(event) =>
+                    setRecordingFps(normalizeRecordingFps(Number(event.currentTarget.value)))
+                  }
+                  step={1}
+                  type="number"
+                  value={recordingFps}
+                />
+              </label>
+              <div className="export-status" data-state={recordingState}>
+                {recordingState === 'recording'
+                  ? copy.exporting
+                  : recordingState === 'ready'
+                    ? copy.exportReady
+                    : recordingState === 'unsupported'
+                      ? copy.exportUnsupported
+                      : recordingState === 'failed'
+                        ? copy.exportFailed
+                        : `${recordingFps} fps`}
+              </div>
+            </div>
+            <div className="export-actions">
+              {recordingState === 'recording' ? (
+                <button onClick={stopRecording} type="button">
+                  {copy.stopExport}
+                </button>
+              ) : (
+                <button onClick={startRecording} type="button">
+                  {copy.startExport}
+                </button>
+              )}
+              {recordingDownloadUrl ? (
+                <a className="export-download" download={recordingFilename} href={recordingDownloadUrl}>
+                  {copy.downloadExport}
+                </a>
+              ) : null}
+            </div>
+            <small className="field-toggle__hint">
+              {copy.exportHint}
+            </small>
           </details>
           <details className="control-group" open>
             <summary>{copy.coreOptics}</summary>

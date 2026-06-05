@@ -14,6 +14,7 @@ export type LiquidGlassSource = {
 
 type WebGLVideoEdgeGlassProps = {
   className?: string
+  onCanvasReady?: (canvas: HTMLCanvasElement | null) => void
   onNaturalSizeChange?: (size: SourceSize) => void
   settings: LiquidGlassSettings
   source: LiquidGlassSource
@@ -23,6 +24,7 @@ type WebGLVideoEdgeGlassProps = {
 
 export function WebGLVideoEdgeGlass({
   className,
+  onCanvasReady,
   onNaturalSizeChange,
   settings,
   source,
@@ -42,6 +44,18 @@ export function WebGLVideoEdgeGlass({
     settingsRef.current = settings
     rendererRef.current?.updateSettings(settings)
   }, [settings])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+
+    if (!canvas) {
+      return undefined
+    }
+
+    onCanvasReady?.(canvas)
+
+    return () => onCanvasReady?.(null)
+  }, [onCanvasReady])
 
   useEffect(() => {
     const canvas = canvasRef.current
