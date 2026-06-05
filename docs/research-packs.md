@@ -19,6 +19,7 @@ File:
 
 ```txt
 docs/research-liquid-glass.md
+docs/research/liquid-glass.md
 ```
 
 Source:
@@ -39,6 +40,7 @@ File:
 
 ```txt
 docs/case-kube-io-math-webgl.md
+docs/research/kube-io-math-webgl.md
 ```
 
 Source:
@@ -51,6 +53,21 @@ Purpose:
 
 ```txt
 Preserves a more general profile-library model: squircle, spherical, concave, and lip bevel profiles; profile derivative; 3D surface normal; specular angle; and a path toward universal refractive materials.
+```
+
+### Case Pack 03: Source And Region Controls
+
+File:
+
+```txt
+docs/source-regions-research.md
+docs/research/source-regions-research.md
+```
+
+Purpose:
+
+```txt
+Preserves the source selection and shader-side region mask decisions: uploaded image/video sources, source frame modes, object URL lifecycle, and legacy preset compatibility.
 ```
 
 ## Rule

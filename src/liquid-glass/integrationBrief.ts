@@ -2,6 +2,7 @@ import type { LiquidGlassSettings } from './settings'
 import { serializeLiquidGlassPreset } from './settings'
 
 const liquidGlassRepositoryUrl = 'https://github.com/i4w7w4a/Liquid_Prnc_Glass'
+const liquidGlassProjectSiteUrl = 'http://liquid-prince.online/'
 
 function getFadeModeLabel(fieldFadeMode: number) {
   return fieldFadeMode === 1 ? 'source dissolve' : 'optical mask'
@@ -17,6 +18,9 @@ export function generateLiquidGlassIntegrationBrief(settings: LiquidGlassSetting
 
 Источник лаборатории и скачивание:
 ${liquidGlassRepositoryUrl}
+
+Публичный сайт проекта:
+${liquidGlassProjectSiteUrl}
 
 Важно:
 - это не CSS filter, не blur и не декоративный overlay;

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "Liquid Prnc Glass"
+message: "If you use this project in research, creative coding, or production experiments, please cite it."
+type: software
+authors:
+  - name: "i4w7w4a"
+repository-code: "https://github.com/i4w7w4a/Liquid_Prnc_Glass"
+url: "http://liquid-prince.online/"
+abstract: "A standalone WebGL/GLSL optics lab for reusable edge refraction on video, image, and other visual sources."
+keywords:
+  - WebGL
+  - GLSL
+  - Three.js
+  - liquid glass
+  - refraction
+  - shader
+  - creative coding
+  - video processing
+  - WebCodecs
+  - Mediabunny

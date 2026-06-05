@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/i4w7w4a/Liquid_Prnc_Glass/tree/main/docs
+    about: Read the project documentation first.
+  - name: Project site
+    url: http://liquid-prince.online/
+    about: Open the live project site.

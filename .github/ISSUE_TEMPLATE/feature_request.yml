@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an improvement to the optical lab
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe how this improves the optical technique, portability, export, or maintainability.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is missing or hard today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Shader / optical model
+        - Settings / presets
+        - UI controls
+        - Export / recording
+        - Documentation
+        - Integration
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this belongs here
+      description: How does this make the glass better, more controllable, or more portable?
+    validations:
+      required: true

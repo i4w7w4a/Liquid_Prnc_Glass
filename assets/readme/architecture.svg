@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Liquid Prnc Glass Architecture</title>
+  <desc id="desc">React shell passes settings to a WebGL bridge, then to a Three.js renderer and GLSL shader, with export and integration outputs.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F0E16"/>
+      <stop offset="0.52" stop-color="#171522"/>
+      <stop offset="1" stop-color="#2E284D"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9FFFCB"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <text x="64" y="72" fill="#E1DAF0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">Liquid Prnc Glass Architecture</text>
+  <text x="64" y="112" fill="#9FFFCB" font-family="Segoe UI, Arial, sans-serif" font-size="20">source texture / optical field / portable renderer core</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <g filter="url(#glow)">
+      <rect x="72" y="220" width="210" height="124" fill="#171522" stroke="#AE9AF3" stroke-width="2"/>
+      <text x="96" y="268" fill="#E1DAF0" font-size="23" font-weight="700">React shell</text>
+      <text x="96" y="300" fill="#AE9AF3" font-size="15">src/App.tsx</text>
+    </g>
+
+    <g filter="url(#glow)">
+      <rect x="356" y="220" width="230" height="124" fill="#171522" stroke="#AE9AF3" stroke-width="2"/>
+      <text x="382" y="262" fill="#E1DAF0" font-size="23" font-weight="700">DOM/WebGL bridge</text>
+      <text x="382" y="295" fill="#AE9AF3" font-size="15">WebGLVideoEdgeGlass.tsx</text>
+    </g>
+
+    <g filter="url(#glow)">
+      <rect x="670" y="220" width="230" height="124" fill="#171522" stroke="#AE9AF3" stroke-width="2"/>
+      <text x="696" y="262" fill="#E1DAF0" font-size="23" font-weight="700">Three.js renderer</text>
+      <text x="696" y="295" fill="#AE9AF3" font-size="15">WebGLVideoEdgeGlassRenderer.ts</text>
+    </g>
+
+    <g filter="url(#glow)">
+      <rect x="984" y="220" width="206" height="124" fill="#171522" stroke="#9FFFCB" stroke-width="2"/>
+      <text x="1010" y="262" fill="#E1DAF0" font-size="23" font-weight="700">GLSL shader</text>
+      <text x="1010" y="295" fill="#9FFFCB" font-size="15">refraction + fade</text>
+    </g>
+
+    <g stroke="#9FFFCB" stroke-width="4" marker-end="url(#arrow)">
+      <line x1="282" y1="282" x2="344" y2="282"/>
+      <line x1="586" y1="282" x2="658" y2="282"/>
+      <line x1="900" y1="282" x2="972" y2="282"/>
+    </g>
+
+    <g>
+      <rect x="154" y="438" width="218" height="82" fill="#0F0E16" stroke="#4F505D" stroke-width="2"/>
+      <text x="178" y="472" fill="#E1DAF0" font-size="18" font-weight="700">Settings + presets</text>
+      <text x="178" y="497" fill="#AE9AF3" font-size="14">settings.ts</text>
+
+      <rect x="462" y="438" width="218" height="82" fill="#0F0E16" stroke="#4F505D" stroke-width="2"/>
+      <text x="486" y="472" fill="#E1DAF0" font-size="18" font-weight="700">Recording export</text>
+      <text x="486" y="497" fill="#AE9AF3" font-size="14">recordingExport.ts</text>
+
+      <rect x="770" y="438" width="218" height="82" fill="#0F0E16" stroke="#4F505D" stroke-width="2"/>
+      <text x="794" y="472" fill="#E1DAF0" font-size="18" font-weight="700">MP4 render export</text>
+      <text x="794" y="497" fill="#AE9AF3" font-size="14">renderMp4Export.ts</text>
+
+      <rect x="462" y="548" width="218" height="42" fill="#0F0E16" stroke="#4F505D" stroke-width="2"/>
+      <text x="488" y="575" fill="#E1DAF0" font-size="17" font-weight="700">Integration brief</text>
+    </g>
+  </g>
+</svg>
