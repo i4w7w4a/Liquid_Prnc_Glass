@@ -76,6 +76,12 @@ Every PR should include:
 - test/build result;
 - any browser/GPU caveat found during manual testing.
 
+## Issues
+
+Issues are for reproducible work. Questions, tuning, and early ideas belong in Discussions.
+
+Before filing an issue, read [Issue Triage](docs/issue-triage.md). Optical artifact reports should include preset JSON, source type, browser, GPU, and screenshot or clip.
+
 ## Release Discipline
 
 Do not prepare a release for every small edit.

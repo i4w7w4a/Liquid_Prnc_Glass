@@ -1,4 +1,4 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
   - name: Documentation
     url: https://github.com/i4w7w4a/Liquid_Prnc_Glass/tree/main/docs
@@ -6,3 +6,12 @@ contact_links:
   - name: Project site
     url: http://liquid-prince.online/
     about: Open the live project site.
+  - name: Q&A / integration help
+    url: https://github.com/i4w7w4a/Liquid_Prnc_Glass/discussions/categories/q-a
+    about: Ask questions that are not reproducible bugs.
+  - name: Shader tuning discussion
+    url: https://github.com/i4w7w4a/Liquid_Prnc_Glass/discussions/4
+    about: Share presets, screenshots, and optical tuning notes.
+  - name: Security report
+    url: https://github.com/i4w7w4a/Liquid_Prnc_Glass/blob/main/SECURITY.md
+    about: Read the security policy before reporting a vulnerability.

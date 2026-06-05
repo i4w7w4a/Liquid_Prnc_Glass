@@ -49,6 +49,7 @@ This project follows a human-readable changelog style.
 - Added release process rules and release note template.
 - Added Dependabot and CodeQL workflows.
 - Added GitHub Discussions guide and category form templates.
+- Added stronger issue templates, support guidance, and issue triage rules.
 
 ## 0.1.0
 

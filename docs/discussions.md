@@ -16,6 +16,8 @@ Use Issues when you have:
 - broken build or test output;
 - a specific feature request with acceptance criteria.
 
+Issue triage rules live in [Issue Triage](issue-triage.md).
+
 ## Recommended Categories
 
 Existing GitHub categories:

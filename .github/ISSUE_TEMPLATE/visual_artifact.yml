@@ -1,0 +1,89 @@
+name: Visual artifact
+description: Report a reproducible shader, refraction, mask, or rendering artifact
+title: "[Visual]: "
+labels: ["bug", "visual-artifact", "area:shader", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the optical result looks wrong: hard seams, ghost chroma, broken masks,
+        wrong IOR direction, stretched source, unexpected highlights, or region leakage.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Artifact summary
+      description: What looks wrong?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: artifact_type
+    attributes:
+      label: Artifact type
+      options:
+        - Hard field edge / visible seam
+        - Ghost chroma outside mask
+        - Highlight or darkening outside mask
+        - Wrong IOR direction
+        - Source stretching / aspect problem
+        - Region selection leak
+        - Black frame / blank canvas
+        - WebGL or shader compile error
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the live site or run npm run dev
+        2. Use source...
+        3. Import preset...
+        4. Enable field/regions...
+        5. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: preset
+    attributes:
+      label: Preset JSON
+      description: Required for optical artifacts unless the default preset reproduces it.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshot / clip
+      description: Attach a screenshot, GIF, or short recording if possible.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS:
+        Browser:
+        Browser version:
+        GPU:
+        Source type:
+        Source frame mode:
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I can reproduce this on the built-in demo source
+          required: false
+        - label: I can reproduce this with ior = 0 / clean source path
+          required: false
+        - label: I checked the browser console for WebGL/shader errors
+          required: true

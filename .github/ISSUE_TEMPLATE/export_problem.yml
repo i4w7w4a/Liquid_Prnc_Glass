@@ -1,0 +1,94 @@
+name: Export problem
+description: Report a reproducible recording, MP4 render, or download problem
+title: "[Export]: "
+labels: ["bug", "area:export", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Export bugs should describe the rendered output path, not only the preview.
+        The lab has two paths: Preview Record and MP4 Render.
+
+  - type: dropdown
+    id: export_path
+    attributes:
+      label: Export path
+      options:
+        - Preview Record / MediaRecorder
+        - MP4 Render / WebCodecs
+        - Download link / filename
+        - Both export paths
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What failed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the live site or run npm run dev
+        2. Use source...
+        3. Set FPS/duration/size...
+        4. Click Record or Render MP4...
+        5. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: export_settings
+    attributes:
+      label: Export settings
+      placeholder: |
+        FPS:
+        Duration:
+        Render size:
+        Source type:
+        Source natural size:
+    validations:
+      required: true
+
+  - type: textarea
+    id: preset
+    attributes:
+      label: Preset JSON
+      render: json
+
+  - type: textarea
+    id: errors
+    attributes:
+      label: Console errors / browser messages
+      description: Paste relevant console output.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS:
+        Browser:
+        Browser version:
+        GPU:
+        WebCodecs VideoEncoder available: yes/no/unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I tried the built-in demo source
+          required: false
+        - label: I tried a 1 second MP4 render smoke test
+          required: false
+        - label: I checked the browser console
+          required: true

@@ -1,12 +1,13 @@
 name: Feature request
 description: Suggest an improvement to the optical lab
 title: "[Feature]: "
-labels: ["enhancement"]
+labels: ["enhancement", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
         Please describe how this improves the optical technique, portability, export, or maintainability.
+        Early ideas belong in Discussions. Use an issue when the proposal is concrete.
 
   - type: textarea
     id: problem
@@ -47,3 +48,25 @@ body:
       description: How does this make the glass better, more controllable, or more portable?
     validations:
       required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What should be true when this is done?
+      placeholder: |
+        - Preset imports without changing values
+        - Shader path preserves clean-source behavior
+        - Export still renders the shader result
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This is not a CSS blur/filter replacement
+          required: true
+        - label: This does not turn the lab into a landing page
+          required: true

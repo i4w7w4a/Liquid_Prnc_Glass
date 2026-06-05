@@ -1,12 +1,30 @@
 name: Bug report
-description: Report a reproducible problem in the lab
+description: Report a reproducible problem in the lab shell, settings, source loading, or renderer
 title: "[Bug]: "
-labels: ["bug"]
+labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting a problem. Please include enough detail to reproduce it.
+        Thank you for reporting a problem. Issues are for reproducible bugs.
+        Questions, tuning ideas, and integration help belong in Discussions.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - App shell / UI
+        - Source loading
+        - Settings / presets
+        - Renderer lifecycle
+        - Shader / optical model
+        - Export / recording
+        - Documentation
+        - CI / tooling
+        - Not sure
+    validations:
+      required: true
 
   - type: textarea
     id: summary
@@ -30,6 +48,18 @@ body:
       required: true
 
   - type: textarea
+    id: source
+    attributes:
+      label: Source setup
+      description: What source did you use?
+      placeholder: |
+        Source type: built-in demo / uploaded image / uploaded motion source
+        Source frame mode: viewport / natural / manual
+        Source size:
+    validations:
+      required: true
+
+  - type: textarea
     id: expected
     attributes:
       label: Expected result
@@ -47,6 +77,7 @@ body:
     id: preset
     attributes:
       label: Preset / settings JSON
+      description: Paste the preset if the issue depends on optical settings.
       render: json
 
   - type: textarea
@@ -56,6 +87,7 @@ body:
       placeholder: |
         OS:
         Browser:
+        Browser version:
         GPU:
         Node:
         npm:
@@ -67,6 +99,10 @@ body:
     attributes:
       label: Checks
       options:
+        - label: I searched existing issues and discussions
+          required: true
+        - label: I can reproduce this with the latest `main` branch or live site
+          required: true
         - label: I ran npm run test
           required: false
         - label: I ran npm run build

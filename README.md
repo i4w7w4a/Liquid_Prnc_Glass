@@ -212,6 +212,7 @@ const settings: LiquidGlassSettings = {
 - [Roadmap](docs/roadmap.md)
 - [Release Process](docs/release-process.md)
 - [Discussions Guide](docs/discussions.md)
+- [Issue Triage](docs/issue-triage.md)
 - [Preset Guide](docs/guides/presets.md)
 - [Source Regions Guide](docs/guides/source-regions.md)
 - [Troubleshooting](docs/guides/troubleshooting.md)
