@@ -11,7 +11,7 @@ export type RenderFrameTiming = {
 }
 
 const defaultRenderDuration = 6
-const maxRenderDuration = 30
+const maxRenderDuration = 600
 const minRenderDuration = 1
 const defaultRenderFps = 30
 const maxRenderFps = 60
@@ -35,6 +35,20 @@ export function normalizeRenderExportDuration(value: number) {
   }
 
   return clamp(Number(value.toFixed(2)), minRenderDuration, maxRenderDuration)
+}
+
+export function resolveRenderExportDurationFromSource({
+  fallbackDurationSeconds,
+  sourceDurationSeconds,
+}: {
+  fallbackDurationSeconds: number
+  sourceDurationSeconds: number
+}) {
+  if (Number.isFinite(sourceDurationSeconds) && sourceDurationSeconds > 0) {
+    return normalizeRenderExportDuration(sourceDurationSeconds)
+  }
+
+  return normalizeRenderExportDuration(fallbackDurationSeconds)
 }
 
 export function normalizeRenderExportFps(value: number) {

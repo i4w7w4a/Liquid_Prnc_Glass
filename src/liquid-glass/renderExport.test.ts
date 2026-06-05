@@ -7,16 +7,33 @@ import {
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
   resolveRenderExportBitrate,
+  resolveRenderExportDurationFromSource,
   resolveRenderExportSize,
 } from './renderExport'
 
 describe('render export helpers', () => {
   it('normalizes export duration and fps to deliberate render bounds', () => {
     expect(normalizeRenderExportDuration(0.2)).toBe(1)
-    expect(normalizeRenderExportDuration(90)).toBe(30)
+    expect(normalizeRenderExportDuration(90)).toBe(90)
+    expect(normalizeRenderExportDuration(900)).toBe(600)
     expect(normalizeRenderExportDuration(Number.NaN)).toBe(6)
     expect(normalizeRenderExportFps(12)).toBe(24)
     expect(normalizeRenderExportFps(72)).toBe(60)
+  })
+
+  it('uses valid source metadata as the default render duration', () => {
+    expect(
+      resolveRenderExportDurationFromSource({
+        fallbackDurationSeconds: 6,
+        sourceDurationSeconds: 10.367,
+      }),
+    ).toBe(10.37)
+    expect(
+      resolveRenderExportDurationFromSource({
+        fallbackDurationSeconds: 8,
+        sourceDurationSeconds: Number.NaN,
+      }),
+    ).toBe(8)
   })
 
   it('resolves even output sizes for encoder-safe renders', () => {

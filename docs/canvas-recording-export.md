@@ -112,9 +112,11 @@ Frame timestamps are computed in microseconds first, then passed to the canvas s
 Render bounds:
 
 ```txt
-duration: 1..30 seconds
+duration: 1..600 seconds
 fps: 24..60
 ```
+
+When a motion source exposes a valid duration in metadata, the UI uses that as the default MP4 render duration. The seconds field stays editable after metadata load.
 
 Export dimensions are forced to even numbers because video encoders expect encoder-safe frame dimensions.
 

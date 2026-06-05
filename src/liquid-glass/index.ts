@@ -8,6 +8,7 @@ export {
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
   resolveRenderExportBitrate,
+  resolveRenderExportDurationFromSource,
   resolveRenderExportSize,
 } from './renderExport'
 export type { RenderExportSizePreset } from './renderExport'

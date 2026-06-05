@@ -35,10 +35,12 @@ Implementation:
 MP4 render constraints:
 
 ```text
-duration: 1..30 seconds
+duration: 1..600 seconds
 fps: 24..60
 size: source, 720p, or 1080p
 ```
+
+When a motion source exposes valid metadata, the lab sets the default render duration from the source duration. The field remains editable, so shorter smoke renders and deliberate long renders are still manual operator choices.
 
 Preview recording constraints:
 

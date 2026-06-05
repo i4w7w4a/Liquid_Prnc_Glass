@@ -6,6 +6,11 @@ This project follows a human-readable changelog style.
 
 ## Unreleased
 
+### Export
+
+- Set MP4 render duration from motion source metadata by default while keeping the seconds field editable.
+- Raised the deliberate MP4 render duration bound from 30 seconds to 600 seconds.
+
 ### Documentation
 
 - Rebuilt the repository README as a human-first WebGL/GLSL optics lab introduction.

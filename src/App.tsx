@@ -19,6 +19,7 @@ import {
   normalizeRecordingFps,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
+  resolveRenderExportDurationFromSource,
   resizeSourceFrameWithAspect,
   resolveNaturalSourceSize,
   serializeLiquidGlassPreset,
@@ -512,6 +513,20 @@ function App() {
     setRenderState('idle')
   }
 
+  const handleSourceDurationChange = (durationSeconds: number | null) => {
+    if (durationSeconds === null) {
+      return
+    }
+
+    setRenderDuration((currentDuration) =>
+      resolveRenderExportDurationFromSource({
+        fallbackDurationSeconds: currentDuration,
+        sourceDurationSeconds: durationSeconds,
+      }),
+    )
+    clearRenderResult()
+  }
+
   const handleSettingChange = (key: LiquidGlassSettingKey, value: number) => {
     setSettings((currentSettings) => ({
       ...normalizeLiquidGlassSettings(currentSettings),
@@ -879,6 +894,7 @@ function App() {
             sourceFrameMode === 'viewport' ? '' : ' preview-stage__glass--framed'
           }`}
           onCanvasReady={handleCanvasReady}
+          onDurationChange={handleSourceDurationChange}
           onNaturalSizeChange={handleSourceNaturalSizeChange}
           settings={activeSettings}
           source={glassSource}
@@ -1062,7 +1078,7 @@ function App() {
                   <label>
                     <span>{copy.renderDuration}</span>
                     <input
-                      max={30}
+                      max={600}
                       min={1}
                       disabled={renderState === 'rendering'}
                       onChange={(event) => {

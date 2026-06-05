@@ -15,6 +15,7 @@ export type LiquidGlassSource = {
 type WebGLVideoEdgeGlassProps = {
   className?: string
   onCanvasReady?: (canvas: HTMLCanvasElement | null) => void
+  onDurationChange?: (durationSeconds: number | null) => void
   onNaturalSizeChange?: (size: SourceSize) => void
   settings: LiquidGlassSettings
   source: LiquidGlassSource
@@ -25,6 +26,7 @@ type WebGLVideoEdgeGlassProps = {
 export function WebGLVideoEdgeGlass({
   className,
   onCanvasReady,
+  onDurationChange,
   onNaturalSizeChange,
   settings,
   source,
@@ -97,10 +99,11 @@ export function WebGLVideoEdgeGlass({
         height: image.naturalHeight,
       }),
     )
+    onDurationChange?.(null)
     setReadySourceKey(sourceKey)
   }
 
-  const publishVideoSize = () => {
+  const publishVideoMetadata = () => {
     const video = videoRef.current
 
     if (!video) {
@@ -113,6 +116,7 @@ export function WebGLVideoEdgeGlass({
         height: video.videoHeight,
       }),
     )
+    onDurationChange?.(Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null)
   }
 
   return (
@@ -125,7 +129,7 @@ export function WebGLVideoEdgeGlass({
           loop
           muted
           onLoadedData={() => setReadySourceKey(sourceKey)}
-          onLoadedMetadata={publishVideoSize}
+          onLoadedMetadata={publishVideoMetadata}
           playsInline
           poster={source.poster}
           preload="auto"
