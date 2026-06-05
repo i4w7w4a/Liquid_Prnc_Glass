@@ -20,7 +20,10 @@ This project follows a human-readable changelog style.
 - Added code of conduct.
 - Added issue and pull request templates.
 - Added CI workflow.
-- Added citation metadata without claiming a license that has not been selected.
+- Added citation metadata.
+- Added release process rules and release note template.
+- Added Dependabot and CodeQL workflows.
+- Added GitHub Discussions guide and category form templates.
 
 ## 0.1.0
 

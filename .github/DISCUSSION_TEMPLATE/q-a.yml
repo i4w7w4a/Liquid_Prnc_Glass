@@ -1,0 +1,37 @@
+title: "[Q&A]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask integration or tuning questions here. Include enough context to avoid guessing.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: |
+        Source type:
+        Browser:
+        GPU:
+        Target project:
+    validations:
+      required: true
+
+  - type: textarea
+    id: preset
+    attributes:
+      label: Preset JSON
+      render: json
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / errors

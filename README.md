@@ -198,6 +198,8 @@ const settings: LiquidGlassSettings = {
 - [Export](docs/export.md)
 - [Integration](docs/integration.md)
 - [Roadmap](docs/roadmap.md)
+- [Release Process](docs/release-process.md)
+- [Discussions Guide](docs/discussions.md)
 - [Preset Guide](docs/guides/presets.md)
 - [Source Regions Guide](docs/guides/source-regions.md)
 - [Troubleshooting](docs/guides/troubleshooting.md)

@@ -51,6 +51,20 @@ Enable:
 - GitHub Actions;
 - private vulnerability reporting, if available.
 
+Recommended Discussions categories:
+
+```text
+Announcements
+General
+Ideas
+Q&A
+Show and tell
+Shader tuning
+Integration help
+```
+
+If GitHub does not expose category creation through the CLI/API, create `Shader tuning` and `Integration help` manually in repository Discussions settings.
+
 ## Release
 
 After the repository presentation lands:

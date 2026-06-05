@@ -76,6 +76,21 @@ Every PR should include:
 - test/build result;
 - any browser/GPU caveat found during manual testing.
 
+## Release Discipline
+
+Do not prepare a release for every small edit.
+
+Ask whether to prepare a release when the change has public meaning:
+
+- visible optical behavior;
+- new shader setting or changed preset contract;
+- export, recording, or integration changes;
+- meaningful presentation or documentation milestone;
+- dependency/security change that affects users;
+- explicit maintainer request.
+
+When a release is requested, follow [Release Process](docs/release-process.md). Release notes should include concise ASCII identity, highlights, visual proof assets, checks, and honest limits.
+
 ## Documentation
 
 When changing behavior, update the closest document:
@@ -86,3 +101,4 @@ When changing behavior, update the closest document:
 - export: `docs/export.md`;
 - integration: `docs/integration.md`;
 - roadmap: `docs/roadmap.md`.
+- releases: `docs/release-process.md`.

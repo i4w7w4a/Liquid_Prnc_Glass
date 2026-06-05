@@ -1,0 +1,37 @@
+title: "[Idea]: "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for early optical directions. Use Issues only when the work is concrete and reproducible.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should the lab explore?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Shader / optical model
+        - Settings / presets
+        - Export / recording
+        - Integration
+        - Documentation
+        - Community
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Why it belongs here
+      description: How does it make the glass better, more controllable, or more portable?
+    validations:
+      required: true

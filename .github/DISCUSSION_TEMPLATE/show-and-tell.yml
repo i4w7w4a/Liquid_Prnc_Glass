@@ -1,0 +1,32 @@
+title: "[Show]: "
+labels: ["show-and-tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share screenshots, recordings, tuned presets, or integration results.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What did you make?
+    validations:
+      required: true
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots / clips
+      description: Attach images, GIFs, or short clips.
+
+  - type: textarea
+    id: preset
+    attributes:
+      label: Preset JSON
+      render: json
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: What helped the optical result work?
