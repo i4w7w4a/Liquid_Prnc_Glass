@@ -26,10 +26,30 @@ function getShapeLabel(shapeType: number) {
   return labels[shapeType] ?? 'rounded rectangle'
 }
 
+function getFlowModeLabel(flowMode: number) {
+  const labels = [
+    'none',
+    'left',
+    'right',
+    'up',
+    'down',
+    'clockwise',
+    'counterclockwise',
+    'from center',
+    'to center',
+    'organic curl',
+    'shear',
+    'standing wave',
+  ]
+
+  return labels[flowMode] ?? 'none'
+}
+
 export function generateLiquidGlassIntegrationBrief(settings: LiquidGlassSettings) {
   const presetJson = serializeLiquidGlassPreset(settings)
   const fadeModeLabel = getFadeModeLabel(settings.fieldFadeMode)
   const shapeLabel = getShapeLabel(settings.shapeType)
+  const flowModeLabel = getFlowModeLabel(settings.flowMode)
 
   return `# Liquid_Prnc_Glass integration brief
 
@@ -59,6 +79,9 @@ ${settings.fieldFadeMode} - ${fadeModeLabel}
 Shape geometry:
 ${settings.shapeType} - ${shapeLabel}; shapeWarp ${settings.shapeWarp}
 
+Flow field:
+${settings.flowEnabled ? 'enabled' : 'disabled'}; mode ${settings.flowMode} - ${flowModeLabel}; speed ${settings.flowSpeed}; strength ${settings.flowStrength}; scale ${settings.flowScale}; turbulence ${settings.flowTurbulence}; boundary damping ${settings.flowBoundaryDamping}; layer mix ${settings.flowLayerMix}
+
 Core contract:
 - центр остается чистым, эффект появляется постепенно к краям;
 - жесткая линия старта недопустима;
@@ -66,6 +89,7 @@ Core contract:
 - refraction, dispersion, darkening и highlights должны гаситься общей masterFade;
 - shapeType должен менять реальный SDF / signed field, а не только UI icon;
 - shapeDistance(p) должен давать границу формы, а нормаль должна вычисляться по central differences;
+- flow должен применяться к normal/gradient через flowGradient(p, time), а не прибавляться как независимый UV offset после IOR;
 - нельзя оставлять chroma, highlight или darkening вне final fade.
 
 Signed IOR:
@@ -124,6 +148,8 @@ Refraction:
 
 \`\`\`glsl
 vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
+vec2 flowGrad = flowGradient(p, uTime);
+vec2 opticalNormal = normalize(normal + flowGrad * uFlowStrength * masterFade);
 
 float pull =
   signedOpticalPower(uIOR)
@@ -131,7 +157,7 @@ float pull =
   * uFieldStrength
   * (0.055 + thickness * 0.38);
 
-vec2 refractOffset = normal * pull / aspectCorrection;
+vec2 refractOffset = opticalNormal * pull / aspectCorrection;
 \`\`\`
 
 Dispersion sampling:

@@ -13,18 +13,9 @@ The working roadmap lives in [Lab Roadmap](lab-roadmap.md). This page is the pub
 - Preview recording through MediaRecorder.
 - Deterministic MP4 render export through WebCodecs/Mediabunny.
 - Shape geometry picker with regular and irregular SDF silhouettes.
+- Flow Field Controls that perturb the optical normal before signed IOR and dispersion.
 
 ## Planned
-
-### Flow Field Controls
-
-Add moving refraction that perturbs the optical field, not only the highlight sweep:
-
-- direction;
-- speed;
-- strength;
-- scale;
-- turbulence.
 
 ### Profile Surface Mode
 

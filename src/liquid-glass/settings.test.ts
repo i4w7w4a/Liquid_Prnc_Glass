@@ -33,6 +33,14 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.regionSoftness).toBe(0.12)
     expect(defaultLiquidGlassSettings.shapeType).toBe(0)
     expect(defaultLiquidGlassSettings.shapeWarp).toBe(0.35)
+    expect(defaultLiquidGlassSettings.flowEnabled).toBe(false)
+    expect(defaultLiquidGlassSettings.flowMode).toBe(0)
+    expect(defaultLiquidGlassSettings.flowSpeed).toBe(1)
+    expect(defaultLiquidGlassSettings.flowStrength).toBe(0.35)
+    expect(defaultLiquidGlassSettings.flowScale).toBe(2.4)
+    expect(defaultLiquidGlassSettings.flowTurbulence).toBe(0.35)
+    expect(defaultLiquidGlassSettings.flowBoundaryDamping).toBe(0.65)
+    expect(defaultLiquidGlassSettings.flowLayerMix).toBe(0.55)
   })
 
   it('formats signed IOR values', () => {
@@ -72,6 +80,14 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.regionSoftness).toBe(defaultLiquidGlassSettings.regionSoftness)
     expect(parsedPreset.shapeType).toBe(defaultLiquidGlassSettings.shapeType)
     expect(parsedPreset.shapeWarp).toBe(defaultLiquidGlassSettings.shapeWarp)
+    expect(parsedPreset.flowEnabled).toBe(defaultLiquidGlassSettings.flowEnabled)
+    expect(parsedPreset.flowMode).toBe(defaultLiquidGlassSettings.flowMode)
+    expect(parsedPreset.flowSpeed).toBe(defaultLiquidGlassSettings.flowSpeed)
+    expect(parsedPreset.flowStrength).toBe(defaultLiquidGlassSettings.flowStrength)
+    expect(parsedPreset.flowScale).toBe(defaultLiquidGlassSettings.flowScale)
+    expect(parsedPreset.flowTurbulence).toBe(defaultLiquidGlassSettings.flowTurbulence)
+    expect(parsedPreset.flowBoundaryDamping).toBe(defaultLiquidGlassSettings.flowBoundaryDamping)
+    expect(parsedPreset.flowLayerMix).toBe(defaultLiquidGlassSettings.flowLayerMix)
   })
 
   it('normalizes persisted settings with missing field controls', () => {
@@ -94,6 +110,14 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.regionWidth).toBe(defaultLiquidGlassSettings.regionWidth)
     expect(normalizedSettings.shapeType).toBe(defaultLiquidGlassSettings.shapeType)
     expect(normalizedSettings.shapeWarp).toBe(defaultLiquidGlassSettings.shapeWarp)
+    expect(normalizedSettings.flowEnabled).toBe(defaultLiquidGlassSettings.flowEnabled)
+    expect(normalizedSettings.flowMode).toBe(defaultLiquidGlassSettings.flowMode)
+    expect(normalizedSettings.flowSpeed).toBe(defaultLiquidGlassSettings.flowSpeed)
+    expect(normalizedSettings.flowStrength).toBe(defaultLiquidGlassSettings.flowStrength)
+    expect(normalizedSettings.flowScale).toBe(defaultLiquidGlassSettings.flowScale)
+    expect(normalizedSettings.flowTurbulence).toBe(defaultLiquidGlassSettings.flowTurbulence)
+    expect(normalizedSettings.flowBoundaryDamping).toBe(defaultLiquidGlassSettings.flowBoundaryDamping)
+    expect(normalizedSettings.flowLayerMix).toBe(defaultLiquidGlassSettings.flowLayerMix)
   })
 
   it('parses signed IOR values', () => {
@@ -196,6 +220,60 @@ describe('liquid glass settings', () => {
         }),
       ),
     ).toThrow('Setting out of range: shapeWarp')
+  })
+
+  it('parses flow field controls', () => {
+    const parsedPreset = parseLiquidGlassPreset(
+      JSON.stringify({
+        ...defaultLiquidGlassSettings,
+        flowEnabled: true,
+        flowMode: 9,
+        flowSpeed: 2.25,
+        flowStrength: 1.12,
+        flowScale: 5.5,
+        flowTurbulence: 0.72,
+        flowBoundaryDamping: 0.88,
+        flowLayerMix: 0.41,
+      }),
+    )
+
+    expect(parsedPreset.flowEnabled).toBe(true)
+    expect(parsedPreset.flowMode).toBe(9)
+    expect(parsedPreset.flowSpeed).toBe(2.25)
+    expect(parsedPreset.flowStrength).toBe(1.12)
+    expect(parsedPreset.flowScale).toBe(5.5)
+    expect(parsedPreset.flowTurbulence).toBe(0.72)
+    expect(parsedPreset.flowBoundaryDamping).toBe(0.88)
+    expect(parsedPreset.flowLayerMix).toBe(0.41)
+  })
+
+  it('rejects invalid flow field controls', () => {
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          flowMode: 12,
+        }),
+      ),
+    ).toThrow('Setting out of range: flowMode')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          flowStrength: 2,
+        }),
+      ),
+    ).toThrow('Setting out of range: flowStrength')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          flowEnabled: 1,
+        }),
+      ),
+    ).toThrow('Invalid setting: flowEnabled')
   })
 
   it('rejects invalid side region controls', () => {

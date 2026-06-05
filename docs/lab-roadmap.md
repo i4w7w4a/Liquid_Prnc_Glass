@@ -267,7 +267,7 @@ Result:
 Status:
 
 ```txt
-planned
+completed
 ```
 
 Add actual moving refraction, not decorative sliders.
@@ -279,13 +279,24 @@ Required controls:
 - speed;
 - strength;
 - scale;
-- turbulence.
+- turbulence;
+- boundary damping;
+- layer mix.
 
 Implementation notes:
 
-- flow must perturb the refraction offset or SDF travel, not only the highlight sweep;
+- flow must perturb the optical normal/gradient, not final color and not an independent UV offset after IOR;
 - keep the current video texture update path unchanged;
 - avoid noisy rainbow breakup by applying flow before dispersion sampling.
+
+Result:
+
+- added `flowEnabled`, `flowMode`, `flowSpeed`, `flowStrength`, `flowScale`, `flowTurbulence`, `flowBoundaryDamping`, and `flowLayerMix` to the preset contract;
+- added a dedicated purple Flow quick icon on the left side of the control panel;
+- added direction modes for still, linear, clockwise/counterclockwise, radial, organic curl, shear, and standing wave;
+- shader flow is analytic and deterministic through `flowGradient(p, uTime)`;
+- flow perturbs `opticalNormal` before signed IOR and shared dispersion sampling;
+- `ior = 0` remains a clean source because flow does not bypass `signedOpticalPower()`.
 
 ### 3. Profile Surface Mode
 

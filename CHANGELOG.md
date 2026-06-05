@@ -6,6 +6,12 @@ This project follows a human-readable changelog style.
 
 ## Unreleased
 
+### Flow
+
+- Added Flow Field Controls with a dedicated purple quick icon and compact direction picker.
+- Added `flowEnabled`, `flowMode`, `flowSpeed`, `flowStrength`, `flowScale`, `flowTurbulence`, `flowBoundaryDamping`, and `flowLayerMix` to the preset contract.
+- Routed flow through shader-side optical normal perturbation before signed IOR and dispersion sampling.
+
 ### Geometry
 
 - Added a shape geometry picker with icon previews for six regular and five irregular optical silhouettes.

@@ -50,6 +50,19 @@ type RegionPresetCopyKey =
   | 'regionSides'
   | 'regionTopBottom'
   | 'regionTopOnly'
+type FlowModeCopyKey =
+  | 'flowClockwise'
+  | 'flowCounterclockwise'
+  | 'flowDown'
+  | 'flowFromCenter'
+  | 'flowLeft'
+  | 'flowNone'
+  | 'flowOrganicCurl'
+  | 'flowRight'
+  | 'flowShear'
+  | 'flowStandingWave'
+  | 'flowToCenter'
+  | 'flowUp'
 type ShapeCopyKey =
   | 'shapeBlob'
   | 'shapeChipped'
@@ -77,6 +90,10 @@ type ShapeIconKind =
 
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
+const flowControls = liquidGlassControls.filter((control) => control.section === 'flow')
+const primaryFlowControlKeys: LiquidGlassSettingKey[] = ['flowSpeed', 'flowStrength', 'flowScale']
+const primaryFlowControls = flowControls.filter((control) => primaryFlowControlKeys.includes(control.key))
+const advancedFlowControls = flowControls.filter((control) => !primaryFlowControlKeys.includes(control.key))
 const geometryControls = liquidGlassControls.filter((control) => control.section === 'geometry')
 const regionControls = liquidGlassControls.filter((control) => control.section === 'region')
 const defaultSourceSize: SourceSize = { width: 1280, height: 720 }
@@ -93,6 +110,20 @@ const fieldFadeOptions: {
   { value: 0, copyKey: 'fadeMask' },
   { value: 1, copyKey: 'fadeDissolve' },
 ]
+const flowModeOptions = [
+  { value: 0, copyKey: 'flowNone' },
+  { value: 1, copyKey: 'flowLeft' },
+  { value: 2, copyKey: 'flowRight' },
+  { value: 3, copyKey: 'flowUp' },
+  { value: 4, copyKey: 'flowDown' },
+  { value: 5, copyKey: 'flowClockwise' },
+  { value: 6, copyKey: 'flowCounterclockwise' },
+  { value: 7, copyKey: 'flowFromCenter' },
+  { value: 8, copyKey: 'flowToCenter' },
+  { value: 9, copyKey: 'flowOrganicCurl' },
+  { value: 10, copyKey: 'flowShear' },
+  { value: 11, copyKey: 'flowStandingWave' },
+] satisfies { copyKey: FlowModeCopyKey; value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey] }[]
 const renderSizeOptions: { copyKey: RenderSizeCopyKey; value: RenderExportSizePreset }[] = [
   { value: 'source', copyKey: 'renderSizeSource' },
   { value: '720p', copyKey: 'renderSize720p' },
@@ -174,6 +205,25 @@ const uiCopy = {
     fieldHidden: 'Field controls are hidden until enabled.',
     fieldHint: 'The center stays clean; refraction dissolves into the source by curve.',
     failed: 'Failed',
+    flow: 'Flow',
+    flowAdvanced: 'Flow advanced',
+    flowClockwise: 'Clockwise',
+    flowCounterclockwise: 'Counter',
+    flowDirection: 'Direction',
+    flowDown: 'Down',
+    flowFromCenter: 'From center',
+    flowHidden: 'Flow is quiet until enabled.',
+    flowHint: 'Flow perturbs the optical normal before IOR, so zero IOR stays clean.',
+    flowLeft: 'Left',
+    flowNone: 'Still',
+    flowOrganicCurl: 'Curl',
+    flowQuickAction: 'Open flow controls',
+    flowRight: 'Right',
+    flowShear: 'Shear',
+    flowStandingWave: 'Standing',
+    flowToCenter: 'To center',
+    flowUp: 'Up',
+    enableFlow: 'Enable optical flow',
     geometry: 'Geometry',
     import: 'Import',
     imported: 'Imported',
@@ -225,7 +275,7 @@ const uiCopy = {
     shapeRect: 'Rounded rect',
     shapeTorn: 'Torn oval',
     shapeTriangle: 'Triangle',
-    shapeWarpHint: 'Irregular shapes use stable edge variation; flow comes later.',
+    shapeWarpHint: 'Irregular shapes use stable edge variation; flow lives in its own optics layer.',
     shapeWave: 'Wave capsule',
     subtitle: 'WebGL / SourceTexture / SDF / GLSL',
     uploadSource: 'Upload',
@@ -259,6 +309,25 @@ const uiCopy = {
     fieldHidden: 'Настройки поля скрыты, пока режим выключен.',
     fieldHint: 'Центр остается чистым; преломление растворяется в исходнике по кривой.',
     failed: 'Ошибка',
+    flow: 'Поток',
+    flowAdvanced: 'Глубина потока',
+    flowClockwise: 'По часовой',
+    flowCounterclockwise: 'Против',
+    flowDirection: 'Направление',
+    flowDown: 'Вниз',
+    flowFromCenter: 'От центра',
+    flowHidden: 'Поток спит, пока не включен.',
+    flowHint: 'Поток меняет оптическую нормаль до IOR, поэтому нулевой IOR остается чистым.',
+    flowLeft: 'Влево',
+    flowNone: 'Покой',
+    flowOrganicCurl: 'Вихрь',
+    flowQuickAction: 'Открыть настройки потока',
+    flowRight: 'Вправо',
+    flowShear: 'Сдвиг',
+    flowStandingWave: 'Стоячая',
+    flowToCenter: 'К центру',
+    flowUp: 'Вверх',
+    enableFlow: 'Включить оптический поток',
     geometry: 'Геометрия',
     import: 'Импорт',
     imported: 'Импортировано',
@@ -310,7 +379,7 @@ const uiCopy = {
     shapeRect: 'Скругленный квадрат',
     shapeTorn: 'Рваный овал',
     shapeTriangle: 'Треугольник',
-    shapeWarpHint: 'Неровные формы стабильны по краю; текучесть добавим отдельно.',
+    shapeWarpHint: 'Неровные формы стабильны по краю; поток живет отдельным оптическим слоем.',
     shapeWave: 'Волновая капсула',
     subtitle: 'WebGL / SourceTexture / SDF / GLSL',
     uploadSource: 'Загрузить',
@@ -429,6 +498,66 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
       help: 'Стабильная неровность края для органических силуэтов.',
     },
   },
+  flowSpeed: {
+    en: {
+      label: 'Flow speed',
+      help: 'Temporal phase speed for the analytic optical flow.',
+    },
+    ru: {
+      label: 'Скорость потока',
+      help: 'Скорость временной фазы аналитического оптического потока.',
+    },
+  },
+  flowStrength: {
+    en: {
+      label: 'Flow strength',
+      help: 'How strongly flow bends the optical normal before IOR is applied.',
+    },
+    ru: {
+      label: 'Сила потока',
+      help: 'Насколько поток сгибает оптическую нормаль до применения IOR.',
+    },
+  },
+  flowScale: {
+    en: {
+      label: 'Flow scale',
+      help: 'Spatial scale of the moving surface field.',
+    },
+    ru: {
+      label: 'Масштаб потока',
+      help: 'Пространственный масштаб движущегося поля поверхности.',
+    },
+  },
+  flowTurbulence: {
+    en: {
+      label: 'Turbulence',
+      help: 'Curl-like organic breakup blended into the base flow.',
+    },
+    ru: {
+      label: 'Турбулентность',
+      help: 'Вихревая органика, смешанная с базовым потоком.',
+    },
+  },
+  flowBoundaryDamping: {
+    en: {
+      label: 'Boundary damping',
+      help: 'Softly damps flow near mask boundaries to prevent seams.',
+    },
+    ru: {
+      label: 'Гашение границ',
+      help: 'Мягко тушит поток возле границ маски, чтобы не было швов.',
+    },
+  },
+  flowLayerMix: {
+    en: {
+      label: 'Layer mix',
+      help: 'Second phase layer that reduces repetitive pulsing.',
+    },
+    ru: {
+      label: 'Смешение слоев',
+      help: 'Второй фазовый слой, который снижает механическую пульсацию.',
+    },
+  },
   pixelRatio: {
     en: {
       label: 'Pixel ratio',
@@ -491,6 +620,58 @@ function ShapeIcon({ icon }: { icon: ShapeIconKind }) {
   )
 }
 
+function FlowGlyph() {
+  return (
+    <svg aria-hidden="true" className="flow-glyph" focusable="false" viewBox="0 0 48 48">
+      <path d="M12 18c6-9 23-9 29 1" />
+      <path d="M36 13l5 6-8 2" />
+      <path d="M36 30c-6 9-23 9-29-1" />
+      <path d="M12 35l-5-6 8-2" />
+      <path d="M16 24c4-4 12-4 16 0" />
+    </svg>
+  )
+}
+
+function FlowModeIcon({ mode }: { mode: number }) {
+  const commonProps = { fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+
+  return (
+    <svg aria-hidden="true" className="flow-mode-icon" focusable="false" viewBox="0 0 32 32">
+      {mode === 0 ? (
+        <path {...commonProps} d="M9 16h14" />
+      ) : mode === 1 ? (
+        <path {...commonProps} d="M22 8 14 16l8 8M15 16h10" />
+      ) : mode === 2 ? (
+        <path {...commonProps} d="M10 8l8 8-8 8M7 16h10" />
+      ) : mode === 3 ? (
+        <path {...commonProps} d="M16 7v18M8 15l8-8 8 8" />
+      ) : mode === 4 ? (
+        <path {...commonProps} d="M16 7v18M8 17l8 8 8-8" />
+      ) : mode === 5 ? (
+        <path {...commonProps} d="M10 11a9 9 0 0 1 13 2M23 7v6h-6" />
+      ) : mode === 6 ? (
+        <path {...commonProps} d="M22 11a9 9 0 0 0-13 2M9 7v6h6" />
+      ) : mode === 7 ? (
+        <>
+          <path {...commonProps} d="M16 16 8 8M16 16l8-8M16 16 8 24M16 16l8 8" />
+          <circle cx="16" cy="16" r="2" />
+        </>
+      ) : mode === 8 ? (
+        <>
+          <path {...commonProps} d="M8 8l8 8M24 8l-8 8M8 24l8-8M24 24l-8-8" />
+          <circle cx="16" cy="16" r="2" />
+        </>
+      ) : mode === 9 ? (
+        <path {...commonProps} d="M10 20c7 8 18-4 10-10-7-5-15 5-8 11" />
+      ) : mode === 10 ? (
+        <path {...commonProps} d="M7 11h18M7 21h18M11 7l-4 4 4 4M21 17l4 4-4 4" />
+      ) : (
+        <path {...commonProps} d="M6 16c4-8 8 8 12 0s8 8 12 0" />
+      )}
+    </svg>
+  )
+}
+
 function App() {
   const [language, setLanguage] = useState<Language>('en')
   const [settings, setSettings] = useState<LiquidGlassSettings>(defaultLiquidGlassSettings)
@@ -523,6 +704,7 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
   const recordingStreamRef = useRef<MediaStream | null>(null)
+  const flowGroupRef = useRef<HTMLDetailsElement>(null)
   const sourceFileInputRef = useRef<HTMLInputElement>(null)
   const shapePickerRef = useRef<HTMLDetailsElement>(null)
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
@@ -665,6 +847,29 @@ function App() {
     clearRenderResult()
   }
 
+  const handleFlowEnabledChange = (value: boolean) => {
+    setSettings((currentSettings) => ({
+      ...normalizeLiquidGlassSettings(currentSettings),
+      flowEnabled: value,
+    }))
+    setCopyState('idle')
+    setBriefState('idle')
+    setImportState('idle')
+    clearRenderResult()
+  }
+
+  const handleFlowModeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
+    setSettings((currentSettings) => ({
+      ...normalizeLiquidGlassSettings(currentSettings),
+      flowMode: value,
+      flowEnabled: value === 0 ? currentSettings.flowEnabled : true,
+    }))
+    setCopyState('idle')
+    setBriefState('idle')
+    setImportState('idle')
+    clearRenderResult()
+  }
+
   const handleFieldFadeModeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
     setSettings((currentSettings) => ({
       ...normalizeLiquidGlassSettings(currentSettings),
@@ -674,6 +879,11 @@ function App() {
     setBriefState('idle')
     setImportState('idle')
     clearRenderResult()
+  }
+
+  const openFlowControls = () => {
+    flowGroupRef.current?.setAttribute('open', '')
+    flowGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const handleShapeTypeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
@@ -1031,6 +1241,17 @@ function App() {
         />
       </section>
       <aside className="control-panel" aria-label="Glass controls">
+        <div className="control-panel__rail" aria-label={copy.flowQuickAction}>
+          <button
+            aria-pressed={activeSettings.flowEnabled}
+            className="flow-quick-button"
+            onClick={openFlowControls}
+            title={copy.flowQuickAction}
+            type="button"
+          >
+            <FlowGlyph />
+          </button>
+        </div>
         <div className="control-panel__head">
           <div className="control-panel__title-row">
             <p>Liquid_Prnc_Glass</p>
@@ -1193,6 +1414,104 @@ function App() {
                 })}
               </>
             ) : null}
+          </details>
+          <details className="control-group control-group--flow" ref={flowGroupRef} open>
+            <summary>{copy.flow}</summary>
+            <label className="field-toggle">
+              <input
+                checked={activeSettings.flowEnabled}
+                onChange={(event) => handleFlowEnabledChange(event.currentTarget.checked)}
+                type="checkbox"
+              />
+              <span>{copy.enableFlow}</span>
+            </label>
+            <small className="field-toggle__hint">
+              {copy.flowHint}
+            </small>
+            {activeSettings.flowEnabled ? (
+              <>
+                <div className="flow-mode">
+                  <span>{copy.flowDirection}</span>
+                  <div className="flow-mode__buttons">
+                    {flowModeOptions.map((option) => (
+                      <button
+                        aria-pressed={activeSettings.flowMode === option.value}
+                        key={option.value}
+                        onClick={() => handleFlowModeChange(option.value)}
+                        title={copy[option.copyKey]}
+                        type="button"
+                      >
+                        <FlowModeIcon mode={option.value} />
+                        <span>{copy[option.copyKey]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {primaryFlowControls.map((control) => {
+                  const inputId = `glass-${control.key}`
+                  const text = controlCopy[control.key][language]
+
+                  return (
+                    <div className="glass-control" key={control.key}>
+                      <span className="glass-control__row">
+                        <label htmlFor={inputId} title={text.help}>
+                          {text.label}
+                        </label>
+                        <output aria-hidden="true" htmlFor={inputId}>
+                          {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                        </output>
+                      </span>
+                      <input
+                        id={inputId}
+                        max={control.max}
+                        min={control.min}
+                        onChange={(event) =>
+                          handleSettingChange(control.key, Number(event.currentTarget.value))
+                        }
+                        step={control.step}
+                        type="range"
+                        value={activeSettings[control.key]}
+                      />
+                      <small>{text.help}</small>
+                    </div>
+                  )
+                })}
+                <details className="flow-advanced">
+                  <summary>{copy.flowAdvanced}</summary>
+                  {advancedFlowControls.map((control) => {
+                    const inputId = `glass-${control.key}`
+                    const text = controlCopy[control.key][language]
+
+                    return (
+                      <div className="glass-control" key={control.key}>
+                        <span className="glass-control__row">
+                          <label htmlFor={inputId} title={text.help}>
+                            {text.label}
+                          </label>
+                          <output aria-hidden="true" htmlFor={inputId}>
+                            {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                          </output>
+                        </span>
+                        <input
+                          id={inputId}
+                          max={control.max}
+                          min={control.min}
+                          onChange={(event) =>
+                            handleSettingChange(control.key, Number(event.currentTarget.value))
+                          }
+                          step={control.step}
+                          type="range"
+                          value={activeSettings[control.key]}
+                        />
+                        <small>{text.help}</small>
+                      </div>
+                    )
+                  })}
+                </details>
+              </>
+            ) : (
+              <p className="control-group__empty">{copy.flowHidden}</p>
+            )}
           </details>
           <details className="control-group" open>
             <summary>{copy.exportResult}</summary>

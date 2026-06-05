@@ -52,6 +52,14 @@ uniform float uRegionWidth;
 uniform float uRegionSoftness;
 uniform float uShapeType;
 uniform float uShapeWarp;
+uniform float uFlowEnabled;
+uniform float uFlowMode;
+uniform float uFlowSpeed;
+uniform float uFlowStrength;
+uniform float uFlowScale;
+uniform float uFlowTurbulence;
+uniform float uFlowBoundaryDamping;
+uniform float uFlowLayerMix;
 
 varying vec2 vUv;
 
@@ -100,6 +108,95 @@ float stableAngularWarp(vec2 p, float seed) {
     sin(angle * 3.0 + seed) * 0.52 +
     sin(angle * 5.0 - seed * 1.7) * 0.28 +
     sin(angle * 9.0 + seed * 0.6) * 0.16;
+}
+
+float directionalFlowPotential(vec2 p, vec2 direction, float time, float scale) {
+  vec2 dir = normalize(direction);
+  float primary = sin(dot(p, dir) * scale * 6.2831853 + time);
+  float secondary = sin(dot(p, vec2(-dir.y, dir.x)) * scale * 4.712389 - time * 0.73);
+  return primary + secondary * 0.28;
+}
+
+float flowPotential(vec2 p, float time) {
+  float mode = floor(uFlowMode + 0.5);
+  float scale = clamp(uFlowScale, 0.25, 8.0);
+  float speed = clamp(uFlowSpeed, 0.0, 4.0);
+  float turbulence = clamp(uFlowTurbulence, 0.0, 1.0);
+  float layerMix = clamp(uFlowLayerMix, 0.0, 1.0);
+  float phase = time * speed;
+
+  if (mode < 0.5) {
+    return 0.0;
+  }
+
+  float base = 0.0;
+
+  if (mode < 1.5) {
+    base = directionalFlowPotential(p, vec2(-1.0, 0.0), phase, scale);
+  } else if (mode < 2.5) {
+    base = directionalFlowPotential(p, vec2(1.0, 0.0), phase, scale);
+  } else if (mode < 3.5) {
+    base = directionalFlowPotential(p, vec2(0.0, 1.0), phase, scale);
+  } else if (mode < 4.5) {
+    base = directionalFlowPotential(p, vec2(0.0, -1.0), phase, scale);
+  } else if (mode < 6.5) {
+    float turn = mode < 5.5 ? 1.0 : -1.0;
+    float angle = atan(p.y, p.x);
+    float radius = length(p);
+    base = sin(angle * 3.0 + radius * scale * 5.0 + phase * turn);
+  } else if (mode < 8.5) {
+    float sourceSign = mode < 7.5 ? -1.0 : 1.0;
+    base = sin(length(p) * scale * 7.0 + phase * sourceSign);
+  } else if (mode < 9.5) {
+    float a = sin(p.x * scale * 4.1 + phase);
+    float b = sin(p.y * scale * 5.3 - phase * 0.82);
+    float c = sin((p.x - p.y) * scale * 3.7 + phase * 0.41);
+    base = a * 0.46 + b * 0.36 + c * 0.28;
+  } else if (mode < 10.5) {
+    base = sin((p.x + p.y * 0.36) * scale * 6.0 + phase) +
+      sin(p.y * scale * 3.2 - phase * 0.5) * 0.35;
+  } else {
+    base = sin(p.x * scale * 5.2) * sin(phase) +
+      sin(p.y * scale * 3.6 + phase * 0.25) * 0.25;
+  }
+
+  float layer = sin(dot(p, vec2(0.73, -0.61)) * scale * 8.4 - phase * 1.37) +
+    sin(dot(p, vec2(-0.31, 0.92)) * scale * 6.2 + phase * 0.67) * 0.42;
+  float organic = stableAngularWarp(p + vec2(sin(phase * 0.17), cos(phase * 0.13)) * 0.08, 3.7);
+
+  return mix(base, layer, layerMix * 0.72) + organic * turbulence * 0.36;
+}
+
+vec2 flowGradient(vec2 p, float time) {
+  float mode = floor(uFlowMode + 0.5);
+
+  if (uFlowEnabled < 0.5 || mode < 0.5 || uFlowStrength <= 0.0) {
+    return vec2(0.0);
+  }
+
+  vec2 eps = vec2(0.0022, 0.0);
+  float dX = flowPotential(p + eps.xy, time) - flowPotential(p - eps.xy, time);
+  float dY = flowPotential(p + eps.yx, time) - flowPotential(p - eps.yx, time);
+  vec2 grad = vec2(dX, dY) / (eps.x * 2.0);
+
+  if (mode > 4.5 && mode < 6.5) {
+    float turn = mode < 5.5 ? 1.0 : -1.0;
+    grad = vec2(-grad.y, grad.x) * turn;
+  } else if (mode > 8.5 && mode < 9.5) {
+    grad = vec2(-grad.y, grad.x);
+  }
+
+  return grad * 0.055;
+}
+
+vec2 applyFlowToNormal(vec2 baseNormal, vec2 p, float opticalMask) {
+  float strength = clamp(uFlowStrength, 0.0, 1.5);
+  float boundaryDamping = clamp(uFlowBoundaryDamping, 0.0, 1.0);
+  float mask = clamp(opticalMask, 0.0, 1.0);
+  float dampedMask = mask * mix(1.0, smoothstep(0.0, 1.0, mask), boundaryDamping);
+  vec2 flowNormal = baseNormal + flowGradient(p, uTime) * strength * dampedMask;
+
+  return length(flowNormal) > 0.00001 ? normalize(flowNormal) : baseNormal;
 }
 
 float shapeDistance(vec2 p, vec2 innerSize, float radius) {
@@ -248,13 +345,14 @@ void main() {
     float masterFade = mix(maskFade, dissolveFade, step(0.5, uFieldFadeMode)) * regionMask;
 
     vec2 normal = length(centerVector) > 0.00001 ? normalize(centerVector) : vec2(0.0);
+    vec2 opticalNormal = applyFlowToNormal(normal, p, masterFade);
     float fieldStrength = clamp(uFieldStrength, 0.0, 2.5);
     float pull = signedOpticalPower(uIOR) * masterFade * fieldStrength * (0.055 + thickness * 0.38);
-    vec2 refractOffset = normal * pull / aspectCorrection;
+    vec2 refractOffset = opticalNormal * pull / aspectCorrection;
     vec3 baseColor = sampleSource(vUv);
     vec3 opticalColor = sampleDispersedSource(vUv, refractOffset, chroma);
     float edgeMask = smoothstep(max(fieldStart + fieldSoftness * 0.65, 0.52), 1.2, edgeTravel) * masterFade;
-    float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * edgeMask;
+    float rimLight = pow(max(dot(opticalNormal, -lightDirection), 0.0), 2.8) * edgeMask;
     float lowerLip = smoothstep(0.58, 1.0, vUv.y) * edgeMask;
     float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.05 + vUv.y * 0.26))) * edgeMask;
     float highlight = (rimLight * 0.72 + lowerLip * 0.24 + sweep * 0.12) * uHighlightStrength;
@@ -284,10 +382,11 @@ void main() {
     (1.0 - smoothstep(thickness * 0.62, thickness * 1.24, d));
   borderMask *= regionMask;
   float bevel = pow(1.0 - clamp(d / max(thickness, 0.001), 0.0, 1.0), 0.58);
+  vec2 opticalNormal = applyFlowToNormal(normal, p, borderMask);
   float pull = signedOpticalPower(uIOR) * borderMask * (0.07 + thickness * 0.62);
-  vec2 refractOffset = normal * pull / aspectCorrection;
+  vec2 refractOffset = opticalNormal * pull / aspectCorrection;
   vec3 color = sampleDispersedSource(vUv, refractOffset, chroma);
-  float rimLight = pow(max(dot(normal, -lightDirection), 0.0), 2.8) * borderMask;
+  float rimLight = pow(max(dot(opticalNormal, -lightDirection), 0.0), 2.8) * borderMask;
   float lowerLip = smoothstep(0.56, 1.0, vUv.y) * borderMask;
   float sweep = smoothstep(0.025, 0.0, abs(vUv.x - fract(uTime * 0.055 + vUv.y * 0.28)));
   float highlight = (rimLight * 0.82 + lowerLip * 0.28 + sweep * 0.18) * uHighlightStrength;
@@ -362,6 +461,14 @@ export class WebGLVideoEdgeGlassRenderer {
         uFieldSoftness: { value: settings.fieldSoftness },
         uFieldStart: { value: settings.fieldStart },
         uFieldStrength: { value: settings.fieldStrength },
+        uFlowBoundaryDamping: { value: settings.flowBoundaryDamping },
+        uFlowEnabled: { value: settings.flowEnabled ? 1 : 0 },
+        uFlowLayerMix: { value: settings.flowLayerMix },
+        uFlowMode: { value: settings.flowMode },
+        uFlowScale: { value: settings.flowScale },
+        uFlowSpeed: { value: settings.flowSpeed },
+        uFlowStrength: { value: settings.flowStrength },
+        uFlowTurbulence: { value: settings.flowTurbulence },
         uHighlightStrength: { value: settings.highlightStrength },
         uIOR: { value: settings.ior },
         uRegionEdges: {
@@ -470,6 +577,14 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uFieldSoftness.value = settings.fieldSoftness
     this.material.uniforms.uFieldStart.value = settings.fieldStart
     this.material.uniforms.uFieldStrength.value = settings.fieldStrength
+    this.material.uniforms.uFlowBoundaryDamping.value = settings.flowBoundaryDamping
+    this.material.uniforms.uFlowEnabled.value = settings.flowEnabled ? 1 : 0
+    this.material.uniforms.uFlowLayerMix.value = settings.flowLayerMix
+    this.material.uniforms.uFlowMode.value = settings.flowMode
+    this.material.uniforms.uFlowScale.value = settings.flowScale
+    this.material.uniforms.uFlowSpeed.value = settings.flowSpeed
+    this.material.uniforms.uFlowStrength.value = settings.flowStrength
+    this.material.uniforms.uFlowTurbulence.value = settings.flowTurbulence
     this.material.uniforms.uHighlightStrength.value = settings.highlightStrength
     this.material.uniforms.uRegionEdges.value.set(
       settings.regionTop ? 1 : 0,

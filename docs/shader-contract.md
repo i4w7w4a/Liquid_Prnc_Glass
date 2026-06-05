@@ -26,6 +26,7 @@ The renderer must preserve these rules:
 source texture
   -> clean source sample
   -> optical field / SDF region
+  -> optional flow normal perturbation
   -> refracted UV offset
   -> RGB dispersion samples
   -> edge darkening
@@ -48,6 +49,45 @@ Meaning:
 - `0.0` keeps the source clean.
 - positive values pull along the optical normal.
 - negative values reverse the pull.
+
+## Flow Field
+
+Flow is a motion layer for the optical surface normal. It is not a final color warp and it is not a
+separate UV offset after IOR.
+
+The order must stay:
+
+```glsl
+vec2 flowGrad = flowGradient(p, uTime);
+vec2 opticalNormal = normalize(baseNormal + flowGrad * uFlowStrength * opticalMask);
+float pull = signedOpticalPower(uIOR) * opticalMask;
+vec2 refractOffset = opticalNormal * pull / aspectCorrection;
+```
+
+This preserves the core invariant:
+
+- `ior = 0` still returns the clean source, even when flow is enabled.
+- negative IOR reverses the whole refractive result.
+- dispersion samples around one shared `refractOffset`.
+
+The first flow implementation is analytic:
+
+```text
+flowGradient(p, time, settings)
+```
+
+It must remain deterministic so preview, PNG frame render, and MP4 render use the same timeline.
+Stateful simulation and ping-pong buffers are reserved for a later premium mode.
+
+Flow masks:
+
+```text
+field mode -> flowMask = masterFade
+edge mode  -> flowMask = borderMask
+regions    -> optical masks already include regionMask
+```
+
+`flowBoundaryDamping` softens flow near mask boundaries so the effect does not create seams.
 
 ## Edge Mode
 
@@ -85,7 +125,9 @@ Irregular shapes:
 - petal lens;
 - torn oval.
 
-Irregular shapes use stable deterministic edge variation through `shapeWarp`. They must not animate until flow controls are explicitly added.
+Irregular shapes use stable deterministic edge variation through `shapeWarp`. Flow may perturb the
+optical normal around those shapes, but the SDF silhouette itself stays stable unless a future
+surface-drift mode explicitly changes that rule.
 
 ## Center-To-Edge Field
 

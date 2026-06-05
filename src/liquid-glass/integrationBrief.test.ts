@@ -22,6 +22,14 @@ const tunedPreset: LiquidGlassSettings = {
   regionSoftness: 0.12,
   shapeType: 8,
   shapeWarp: 0.62,
+  flowEnabled: true,
+  flowMode: 9,
+  flowSpeed: 2.25,
+  flowStrength: 1.12,
+  flowScale: 5.5,
+  flowTurbulence: 0.72,
+  flowBoundaryDamping: 0.88,
+  flowLayerMix: 0.41,
   pixelRatio: 2.25,
   fieldEnabled: true,
 }
@@ -35,7 +43,11 @@ describe('integration brief export', () => {
     expect(brief).toContain('"ior": -1.84')
     expect(brief).toContain('"fieldFadeMode": 0')
     expect(brief).toContain('"shapeType": 8')
+    expect(brief).toContain('"flowMode": 9')
     expect(brief).toContain('Shape geometry')
+    expect(brief).toContain('Flow field')
+    expect(brief).toContain('flowGradient')
+    expect(brief).toContain('normal/gradient')
     expect(brief).toContain('shapeDistance')
     expect(brief).toContain('float signedOpticalPower(float ior)')
     expect(brief).toContain('finalColor = mix(baseColor, opticalColor, masterFade)')

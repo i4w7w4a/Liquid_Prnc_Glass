@@ -10,17 +10,24 @@ export type LiquidGlassSettingKey =
   | 'fieldCurve'
   | 'fieldStrength'
   | 'shapeWarp'
+  | 'flowSpeed'
+  | 'flowStrength'
+  | 'flowScale'
+  | 'flowTurbulence'
+  | 'flowBoundaryDamping'
+  | 'flowLayerMix'
   | 'regionWidth'
   | 'regionSoftness'
   | 'pixelRatio'
 
 export type LiquidGlassBooleanSettingKey =
   | 'fieldEnabled'
+  | 'flowEnabled'
   | 'regionTop'
   | 'regionRight'
   | 'regionBottom'
   | 'regionLeft'
-export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode' | 'shapeType'
+export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode' | 'flowMode' | 'shapeType'
 
 export type LiquidGlassSettings = Record<LiquidGlassSettingKey, number> &
   Record<LiquidGlassDiscreteSettingKey, number> &
@@ -32,7 +39,7 @@ export type LiquidGlassControl = {
   label: string
   max: number
   min: number
-  section: 'core' | 'field' | 'geometry' | 'region'
+  section: 'core' | 'field' | 'flow' | 'geometry' | 'region'
   step: number
 }
 
@@ -52,20 +59,28 @@ const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
   'fieldCurve',
   'fieldStrength',
   'shapeWarp',
+  'flowSpeed',
+  'flowStrength',
+  'flowScale',
+  'flowTurbulence',
+  'flowBoundaryDamping',
+  'flowLayerMix',
   'regionWidth',
   'regionSoftness',
 ]
 
 const liquidGlassBooleanSettingKeys: LiquidGlassBooleanSettingKey[] = [
   'fieldEnabled',
+  'flowEnabled',
   'regionTop',
   'regionRight',
   'regionBottom',
   'regionLeft',
 ]
-const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode', 'shapeType']
+const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode', 'flowMode', 'shapeType']
 const liquidGlassDiscreteSettingBounds: Record<LiquidGlassDiscreteSettingKey, { max: number; min: number }> = {
   fieldFadeMode: { min: 0, max: 1 },
+  flowMode: { min: 0, max: 11 },
   shapeType: { min: 0, max: 10 },
 }
 
@@ -83,6 +98,14 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   fieldStrength: 1,
   shapeType: 0,
   shapeWarp: 0.35,
+  flowEnabled: false,
+  flowMode: 0,
+  flowSpeed: 1,
+  flowStrength: 0.35,
+  flowScale: 2.4,
+  flowTurbulence: 0.35,
+  flowBoundaryDamping: 0.65,
+  flowLayerMix: 0.55,
   regionTop: true,
   regionRight: true,
   regionBottom: true,
@@ -194,6 +217,60 @@ export const liquidGlassControls: LiquidGlassControl[] = [
     help: 'Strength of deterministic edge irregularity for organic shapes.',
   },
   {
+    key: 'flowSpeed',
+    label: 'Flow speed',
+    min: 0,
+    max: 4,
+    step: 0.01,
+    section: 'flow',
+    help: 'Temporal phase speed for analytic optical flow.',
+  },
+  {
+    key: 'flowStrength',
+    label: 'Flow strength',
+    min: 0,
+    max: 1.5,
+    step: 0.01,
+    section: 'flow',
+    help: 'Strength of flow-derived normal perturbation before IOR is applied.',
+  },
+  {
+    key: 'flowScale',
+    label: 'Flow scale',
+    min: 0.25,
+    max: 8,
+    step: 0.01,
+    section: 'flow',
+    help: 'Spatial scale of the moving optical surface field.',
+  },
+  {
+    key: 'flowTurbulence',
+    label: 'Flow turbulence',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    section: 'flow',
+    help: 'Curl-like organic breakup blended into the base flow.',
+  },
+  {
+    key: 'flowBoundaryDamping',
+    label: 'Boundary damping',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    section: 'flow',
+    help: 'Softly damps flow near mask boundaries to prevent seams.',
+  },
+  {
+    key: 'flowLayerMix',
+    label: 'Layer mix',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    section: 'flow',
+    help: 'Second phase layer mixed in to reduce repetitive pulsing.',
+  },
+  {
     key: 'pixelRatio',
     label: 'Pixel ratio',
     min: 1,
@@ -229,6 +306,9 @@ export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number
     key === 'fieldStart' ||
     key === 'fieldSoftness' ||
     key === 'shapeWarp' ||
+    key === 'flowTurbulence' ||
+    key === 'flowBoundaryDamping' ||
+    key === 'flowLayerMix' ||
     key === 'regionWidth' ||
     key === 'regionSoftness'
   ) {

@@ -113,6 +113,51 @@ button {
     0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
+.control-panel__rail {
+  position: absolute;
+  top: 0;
+  left: -52px;
+  display: grid;
+  gap: 8px;
+}
+
+.flow-quick-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(177, 106, 255, 0.58);
+  color: rgba(231, 214, 255, 0.82);
+  background:
+    linear-gradient(180deg, rgba(139, 79, 255, 0.22), rgba(58, 20, 116, 0.36)),
+    rgba(5, 2, 12, 0.76);
+  box-shadow:
+    0 0 26px rgba(143, 71, 255, 0.22),
+    inset 0 0 0 1px rgba(244, 235, 255, 0.06);
+  cursor: pointer;
+}
+
+.flow-quick-button[aria-pressed="true"] {
+  border-color: rgba(203, 163, 255, 0.96);
+  color: #f1e9ff;
+  background:
+    linear-gradient(180deg, rgba(170, 104, 255, 0.4), rgba(83, 31, 160, 0.48)),
+    rgba(10, 2, 22, 0.9);
+  box-shadow:
+    0 0 28px rgba(154, 87, 255, 0.46),
+    inset 0 0 0 1px rgba(244, 235, 255, 0.12);
+}
+
+.flow-glyph {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
 .control-panel__head {
   display: grid;
   gap: 7px;
@@ -211,6 +256,13 @@ button {
   line-height: 1.35;
 }
 
+.control-group--flow {
+  border-color: rgba(177, 106, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(83, 31, 160, 0.1), rgba(0, 0, 0, 0.08)),
+    rgba(0, 0, 0, 0.18);
+}
+
 .glass-control {
   display: grid;
   gap: 7px;
@@ -263,6 +315,7 @@ button {
 .source-toolbar,
 .source-size-mode,
 .export-actions,
+.flow-mode__buttons,
 .region-presets,
 .region-grid {
   display: grid;
@@ -284,6 +337,80 @@ button {
 
 .region-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.flow-mode {
+  display: grid;
+  gap: 7px;
+  color: rgba(218, 255, 226, 0.88);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.flow-mode__buttons {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.flow-mode__buttons button {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  border: 1px solid rgba(177, 106, 255, 0.26);
+  color: rgba(230, 212, 255, 0.72);
+  background: rgba(139, 79, 255, 0.06);
+  cursor: pointer;
+  font-size: 7px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.flow-mode__buttons button[aria-pressed="true"] {
+  border-color: rgba(203, 163, 255, 0.92);
+  color: #f1e9ff;
+  background:
+    linear-gradient(180deg, rgba(170, 104, 255, 0.28), rgba(83, 31, 160, 0.34)),
+    rgba(10, 2, 22, 0.82);
+  box-shadow:
+    0 0 16px rgba(154, 87, 255, 0.3),
+    inset 0 0 0 1px rgba(244, 235, 255, 0.1);
+}
+
+.flow-mode-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+}
+
+.flow-mode-icon circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.flow-advanced {
+  display: grid;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid rgba(177, 106, 255, 0.18);
+  background: rgba(7, 2, 16, 0.38);
+}
+
+.flow-advanced summary {
+  color: rgba(230, 212, 255, 0.78);
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1;
+  list-style-position: outside;
+  text-transform: uppercase;
+}
+
+.flow-advanced[open] summary {
+  margin-bottom: 10px;
 }
 
 .source-toolbar__file {
@@ -618,6 +745,12 @@ button {
     left: 10px;
     width: auto;
     max-height: 52dvh;
+  }
+
+  .control-panel__rail {
+    top: -46px;
+    right: 0;
+    left: auto;
   }
 
   .preset-box__head {
