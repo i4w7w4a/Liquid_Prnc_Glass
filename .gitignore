@@ -6,3 +6,8 @@ dist
 *.log
 coverage
 .vite
+
+# Local deployment secrets. The real hosting config lives outside the repo.
+hosting.ftp.json
+*.ftp.local.json
+.deploy

@@ -48,6 +48,14 @@ Test:
 npm run test
 ```
 
+Deploy to hosting:
+
+```bash
+npm run deploy:hosting
+```
+
+FTP credentials are not stored in this repository. The local config path is documented in [Hosting Deploy](docs/hosting-deploy.md).
+
 ## Project Structure
 
 ```txt
@@ -151,6 +159,7 @@ The component owns a hidden video element and a canvas. The renderer owns the Th
 - [Research: Liquid Glass Over Video](docs/research-liquid-glass.md)
 - [Case Pack 02: Kube.io Math On WebGL GPU](docs/case-kube-io-math-webgl.md)
 - [Lab Roadmap](docs/lab-roadmap.md)
+- [Hosting Deploy](docs/hosting-deploy.md)
 - [Shader](docs/shader.md)
 - [Tuning](docs/tuning.md)
 - [Moderation Guide](docs/moderation-guide.md)
