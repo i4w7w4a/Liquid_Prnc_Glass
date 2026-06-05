@@ -5,6 +5,7 @@ import demoVideo from './assets/demo-video.web.mp4'
 import {
   buildRecordingOptionCandidates,
   WebGLVideoEdgeGlass,
+  buildDemoGlassSource,
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,
   generateLiquidGlassIntegrationBrief,
@@ -13,6 +14,7 @@ import {
   buildRenderImageFilename,
   buildRenderMp4Filename,
   getMp4RenderAvailability,
+  getDemoGlassSourceMode,
   liquidGlassControls,
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
@@ -98,12 +100,12 @@ const advancedFlowControls = flowControls.filter((control) => !primaryFlowContro
 const geometryControls = liquidGlassControls.filter((control) => control.section === 'geometry')
 const regionControls = liquidGlassControls.filter((control) => control.section === 'region')
 const defaultSourceSize: SourceSize = { width: 1280, height: 720 }
-const defaultGlassSource: LiquidGlassSource = {
-  kind: 'video',
-  name: 'Demo source',
-  poster: demoPoster,
-  src: demoVideo,
+const demoGlassSourceAssets = {
+  motionSrc: demoVideo,
+  posterSrc: demoPoster,
 }
+const defaultGlassSource = buildDemoGlassSource({ ...demoGlassSourceAssets, mode: 'motion' })
+const stillDemoGlassSource = buildDemoGlassSource({ ...demoGlassSourceAssets, mode: 'still' })
 const fieldFadeOptions: {
   copyKey: 'fadeMask' | 'fadeDissolve'
   value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]
@@ -227,6 +229,7 @@ const uiCopy = {
     flowStandingWave: 'Standing',
     flowToCenter: 'To center',
     flowUp: 'Up',
+    hideStarterVideo: 'Remove starter video',
     enableFlow: 'Enable optical flow',
     geometry: 'Geometry',
     import: 'Import',
@@ -265,7 +268,8 @@ const uiCopy = {
     startExport: 'Record',
     stopExport: 'Stop',
     source: 'Source',
-    sourceHint: 'Upload an image or a moving source. Demo stays available.',
+    showStarterVideo: 'Restore starter video',
+    sourceHint: 'Upload an image or a moving source. Remove starter video swaps the MP4 demo for a still poster.',
     sourceKindImage: 'Image',
     sourceKindVideo: 'Motion',
     sourceSize: 'Source size',
@@ -335,6 +339,7 @@ const uiCopy = {
     flowStandingWave: 'Стоячая',
     flowToCenter: 'К центру',
     flowUp: 'Вверх',
+    hideStarterVideo: 'Убрать стартовое видео',
     enableFlow: 'Включить оптический поток',
     geometry: 'Геометрия',
     import: 'Импорт',
@@ -373,7 +378,8 @@ const uiCopy = {
     startExport: 'Запись',
     stopExport: 'Стоп',
     source: 'Исходник',
-    sourceHint: 'Загрузи изображение или движущийся source. Демо остается доступным.',
+    showStarterVideo: 'Вернуть стартовое видео',
+    sourceHint: 'Загрузи изображение или движущийся source. Убрать стартовое видео заменяет MP4-демо на статичный постер.',
     sourceKindImage: 'Изображение',
     sourceKindVideo: 'Движение',
     sourceSize: 'Размер исходника',
@@ -791,6 +797,7 @@ function App() {
   const [sourceFrameMode, setSourceFrameMode] = useState<SourceFrameMode>('viewport')
   const [sourceFrameSize, setSourceFrameSize] = useState<SourceSize>(defaultSourceSize)
   const [sourceNaturalSize, setSourceNaturalSize] = useState<SourceSize>(defaultSourceSize)
+  const [sourceReloadKey, setSourceReloadKey] = useState(0)
   const [uploadedSourceUrl, setUploadedSourceUrl] = useState<string | null>(null)
   const [viewportSize, setViewportSize] = useState(() => ({
     height: window.innerHeight,
@@ -816,6 +823,7 @@ function App() {
   )
   const [presetDraft, setPresetDraft] = useState(presetJson)
   const copy = uiCopy[language]
+  const demoSourceMode = getDemoGlassSourceMode(glassSource, demoGlassSourceAssets)
   const exportText = exportView === 'brief' ? integrationBrief : presetDraft
   const sourceFrameStyle = useMemo<CSSProperties | undefined>(() => {
     if (sourceFrameMode === 'viewport') {
@@ -1089,6 +1097,7 @@ function App() {
       name: file.name,
       src: nextSourceUrl,
     })
+    setSourceReloadKey((currentKey) => currentKey + 1)
     setSourceFrameMode('natural')
     setCopyState('idle')
     setBriefState('idle')
@@ -1098,6 +1107,21 @@ function App() {
   const resetSource = () => {
     setGlassSource(defaultGlassSource)
     setUploadedSourceUrl(null)
+    setSourceReloadKey((currentKey) => currentKey + 1)
+    setSourceFrameMode('viewport')
+    setSourceNaturalSize(defaultSourceSize)
+    setSourceFrameSize(defaultSourceSize)
+    setCopyState('idle')
+    setBriefState('idle')
+    clearRenderResult()
+  }
+
+  const toggleStarterVideo = () => {
+    const nextSource = demoSourceMode === 'still' ? defaultGlassSource : stillDemoGlassSource
+
+    setGlassSource(nextSource)
+    setUploadedSourceUrl(null)
+    setSourceReloadKey((currentKey) => currentKey + 1)
     setSourceFrameMode('viewport')
     setSourceNaturalSize(defaultSourceSize)
     setSourceFrameSize(defaultSourceSize)
@@ -1333,6 +1357,7 @@ function App() {
           className={`preview-stage__glass${
             sourceFrameMode === 'viewport' ? '' : ' preview-stage__glass--framed'
           }`}
+          key={`${glassSource.kind}:${glassSource.src}:${sourceReloadKey}`}
           onCanvasReady={handleCanvasReady}
           onDurationChange={handleSourceDurationChange}
           onNaturalSizeChange={handleSourceNaturalSizeChange}
@@ -1391,6 +1416,14 @@ function App() {
               </button>
               <button onClick={() => sourceFileInputRef.current?.click()} type="button">
                 {copy.uploadSource}
+              </button>
+              <button
+                className="source-toolbar__toggle"
+                disabled={demoSourceMode === 'custom'}
+                onClick={toggleStarterVideo}
+                type="button"
+              >
+                {demoSourceMode === 'still' ? copy.showStarterVideo : copy.hideStarterVideo}
               </button>
               <input
                 accept="image/*,video/*"

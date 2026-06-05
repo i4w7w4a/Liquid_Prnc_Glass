@@ -572,7 +572,6 @@ export class WebGLVideoEdgeGlassRenderer {
     this.resize()
 
     if (this.isVideoSource(this.source)) {
-      void this.source.play().catch(() => undefined)
       this.startVideoFrameLoop()
     }
 

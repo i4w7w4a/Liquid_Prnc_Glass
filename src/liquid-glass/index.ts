@@ -25,6 +25,11 @@ export {
   resolveNaturalSourceSize,
 } from './sourceLayout'
 export {
+  buildDemoGlassSource,
+  getDemoGlassSourceMode,
+} from './sourceControls'
+export type { DemoGlassSourceMode, DemoGlassSourceState } from './sourceControls'
+export {
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,
   liquidGlassControls,

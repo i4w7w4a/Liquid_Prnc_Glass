@@ -13,6 +13,12 @@ This project follows a human-readable changelog style.
 - Added a glowing left-rail color quick button that opens the Color panel without crowding the main control stack.
 - Extended preset parsing, formatting, tests, and integration brief export for neutral color correction defaults.
 
+### Source
+
+- Moved starter demo playback control out of the WebGL renderer and into the React source layer with autoplay retry on focus and visibility return.
+- Added a source-panel button to swap the starter MP4 demo for a still poster, reducing decode load when motion is not needed.
+- Added a restore path that remounts the starter motion source so the demo can recover from a paused or blocked state.
+
 ### Flow
 
 - Added Flow Field Controls with a dedicated purple quick icon and compact direction picker.

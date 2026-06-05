@@ -86,6 +86,50 @@ export function WebGLVideoEdgeGlass({
     rendererRef.current?.updateSourceNaturalSize(sourceNaturalSize)
   }, [sourceNaturalSize])
 
+  useEffect(() => {
+    if (source.kind !== 'video' || !sourceReady) {
+      return undefined
+    }
+
+    const video = videoRef.current
+
+    if (!video) {
+      return undefined
+    }
+
+    let disposed = false
+
+    const playSource = () => {
+      if (disposed || video.readyState < 2) {
+        return
+      }
+
+      video.defaultMuted = true
+      video.muted = true
+      video.loop = true
+      void video.play().catch(() => undefined)
+    }
+
+    const playWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        playSource()
+      }
+    }
+
+    video.addEventListener('canplay', playSource)
+    window.addEventListener('focus', playSource)
+    document.addEventListener('visibilitychange', playWhenVisible)
+    playSource()
+
+    return () => {
+      disposed = true
+      video.pause()
+      video.removeEventListener('canplay', playSource)
+      window.removeEventListener('focus', playSource)
+      document.removeEventListener('visibilitychange', playWhenVisible)
+    }
+  }, [source.kind, source.src, sourceReady])
+
   const publishImageSize = () => {
     const image = imageRef.current
 
@@ -117,6 +161,7 @@ export function WebGLVideoEdgeGlass({
       }),
     )
     onDurationChange?.(Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null)
+    setReadySourceKey(sourceKey)
   }
 
   return (
@@ -124,10 +169,12 @@ export function WebGLVideoEdgeGlass({
       {source.kind === 'video' ? (
         <video
           aria-hidden="true"
+          autoPlay
           className="webgl-video-edge-glass__source"
           data-webgl-source-kind={source.kind}
           loop
           muted
+          onCanPlay={() => setReadySourceKey(sourceKey)}
           onLoadedData={() => setReadySourceKey(sourceKey)}
           onLoadedMetadata={publishVideoMetadata}
           playsInline

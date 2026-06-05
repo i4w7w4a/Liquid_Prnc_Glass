@@ -389,6 +389,10 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.source-toolbar__toggle {
+  grid-column: 1 / -1;
+}
+
 .source-size-mode {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
