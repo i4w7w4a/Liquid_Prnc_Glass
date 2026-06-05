@@ -10,7 +10,10 @@ import {
   generateLiquidGlassIntegrationBrief,
   buildRecordingExportFilename,
   chooseSupportedRecordingMimeType,
+  buildRenderMp4Filename,
   liquidGlassControls,
+  normalizeRenderExportDuration,
+  normalizeRenderExportFps,
   normalizeRecordingFps,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
@@ -24,12 +27,15 @@ import type {
   LiquidGlassSource,
   LiquidGlassSettingKey,
   LiquidGlassSettings,
+  RenderExportSizePreset,
   SourceSize,
 } from './liquid-glass'
 
 type Language = 'en' | 'ru'
 type RecordingState = 'failed' | 'idle' | 'ready' | 'recording' | 'unsupported'
+type RenderExportState = 'failed' | 'idle' | 'ready' | 'rendering' | 'unsupported'
 type SourceFrameMode = 'manual' | 'natural' | 'viewport'
+type RenderSizeCopyKey = 'renderSize1080p' | 'renderSize720p' | 'renderSizeSource'
 type RegionKey = Extract<
   LiquidGlassBooleanSettingKey,
   'regionBottom' | 'regionLeft' | 'regionRight' | 'regionTop'
@@ -58,6 +64,11 @@ const fieldFadeOptions: {
 }[] = [
   { value: 0, copyKey: 'fadeMask' },
   { value: 1, copyKey: 'fadeDissolve' },
+]
+const renderSizeOptions: { copyKey: RenderSizeCopyKey; value: RenderExportSizePreset }[] = [
+  { value: 'source', copyKey: 'renderSizeSource' },
+  { value: '720p', copyKey: 'renderSize720p' },
+  { value: '1080p', copyKey: 'renderSize1080p' },
 ]
 const regionToggleOptions: { copyKey: RegionToggleCopyKey; key: RegionKey }[] = [
   { key: 'regionTop', copyKey: 'regionTop' },
@@ -99,11 +110,13 @@ const uiCopy = {
     currentPreset: 'Current preset',
     demoSource: 'Demo',
     downloadExport: 'Download',
+    downloadMp4: 'Download MP4',
     enableField: 'Enable center-to-edge field',
     effectRegions: 'Effect regions',
     exportFailed: 'Export failed',
     exportFps: 'FPS',
-    exportHint: 'Records the current preview in real time.',
+    exportHint: 'Quick preview recording is real-time; MP4 render writes exact frames.',
+    exportPreviewRecord: 'Preview record',
     exportReady: 'Export ready',
     exportResult: 'Export result',
     exportUnsupported: 'Export unsupported',
@@ -131,6 +144,16 @@ const uiCopy = {
     regionTop: 'Top',
     regionTopBottom: 'Top + bottom',
     regionTopOnly: 'Top',
+    renderDuration: 'Seconds',
+    renderFailed: 'Render failed',
+    rendering: 'Rendering',
+    renderMp4: 'Render MP4',
+    renderReady: 'MP4 ready',
+    renderSize: 'Render size',
+    renderSize1080p: '1080p',
+    renderSize720p: '720p',
+    renderSizeSource: 'Source',
+    renderUnsupported: 'Render unsupported',
     reset: 'Reset',
     startExport: 'Record',
     stopExport: 'Stop',
@@ -153,11 +176,13 @@ const uiCopy = {
     currentPreset: 'Текущий пресет',
     demoSource: 'Демо',
     downloadExport: 'Скачать',
+    downloadMp4: 'Скачать MP4',
     enableField: 'Включить поле от центра к краю',
     effectRegions: 'Зоны эффекта',
     exportFailed: 'Ошибка экспорта',
     exportFps: 'FPS',
-    exportHint: 'Записывает текущий preview в реальном времени.',
+    exportHint: 'Быстрая запись пишет preview в реальном времени; MP4-рендер пишет точные кадры.',
+    exportPreviewRecord: 'Запись preview',
     exportReady: 'Экспорт готов',
     exportResult: 'Экспорт результата',
     exportUnsupported: 'Экспорт не поддержан',
@@ -185,6 +210,16 @@ const uiCopy = {
     regionTop: 'Верх',
     regionTopBottom: 'Верх + низ',
     regionTopOnly: 'Верх',
+    renderDuration: 'Секунды',
+    renderFailed: 'Ошибка рендера',
+    rendering: 'Рендер',
+    renderMp4: 'Рендер MP4',
+    renderReady: 'MP4 готов',
+    renderSize: 'Размер рендера',
+    renderSize1080p: '1080p',
+    renderSize720p: '720p',
+    renderSizeSource: 'Исходник',
+    renderUnsupported: 'Рендер не поддержан',
     reset: 'Сброс',
     startExport: 'Запись',
     stopExport: 'Стоп',
@@ -344,6 +379,13 @@ function App() {
   const [recordingFilename, setRecordingFilename] = useState('')
   const [recordingFps, setRecordingFps] = useState(() => normalizeRecordingFps(30))
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
+  const [renderDownloadUrl, setRenderDownloadUrl] = useState<string | null>(null)
+  const [renderDuration, setRenderDuration] = useState(() => normalizeRenderExportDuration(6))
+  const [renderFilename, setRenderFilename] = useState('')
+  const [renderFps, setRenderFps] = useState(() => normalizeRenderExportFps(30))
+  const [renderProgress, setRenderProgress] = useState(0)
+  const [renderSizePreset, setRenderSizePreset] = useState<RenderExportSizePreset>('1080p')
+  const [renderState, setRenderState] = useState<RenderExportState>('idle')
   const [sourceAspectLocked, setSourceAspectLocked] = useState(true)
   const [sourceFrameMode, setSourceFrameMode] = useState<SourceFrameMode>('viewport')
   const [sourceFrameSize, setSourceFrameSize] = useState<SourceSize>(defaultSourceSize)
@@ -424,6 +466,14 @@ function App() {
       }
     }
   }, [recordingDownloadUrl])
+
+  useEffect(() => {
+    return () => {
+      if (renderDownloadUrl) {
+        URL.revokeObjectURL(renderDownloadUrl)
+      }
+    }
+  }, [renderDownloadUrl])
 
   useEffect(() => {
     return () => {
@@ -678,6 +728,45 @@ function App() {
     }
   }
 
+  const startMp4Render = async () => {
+    if (renderState === 'rendering') {
+      return
+    }
+
+    if (typeof VideoEncoder === 'undefined') {
+      setRenderState('unsupported')
+      return
+    }
+
+    if (renderDownloadUrl) {
+      URL.revokeObjectURL(renderDownloadUrl)
+      setRenderDownloadUrl(null)
+      setRenderFilename('')
+    }
+
+    setRenderProgress(0)
+    setRenderState('rendering')
+
+    try {
+      const { renderMp4Export } = await import('./liquid-glass/renderMp4Export')
+      const blob = await renderMp4Export({
+        durationSeconds: renderDuration,
+        fps: renderFps,
+        onProgress: setRenderProgress,
+        settings: activeSettings,
+        sizePreset: renderSizePreset,
+        source: glassSource,
+        sourceNaturalSize,
+      })
+
+      setRenderFilename(buildRenderMp4Filename(new Date()))
+      setRenderDownloadUrl(URL.createObjectURL(blob))
+      setRenderState('ready')
+    } catch {
+      setRenderState('failed')
+    }
+  }
+
   const copyCurrentExport = async () => {
     try {
       await navigator.clipboard.writeText(exportView === 'brief' ? integrationBrief : presetJson)
@@ -837,6 +926,8 @@ function App() {
           </details>
           <details className="control-group" open>
             <summary>{copy.exportResult}</summary>
+            <div className="export-subsection">
+              <span className="export-subsection__title">{copy.exportPreviewRecord}</span>
             <div className="source-dimensions">
               <label>
                 <span>{copy.exportFps}</span>
@@ -882,6 +973,81 @@ function App() {
             <small className="field-toggle__hint">
               {copy.exportHint}
             </small>
+            </div>
+            <div className="export-subsection">
+              <span className="export-subsection__title">{copy.renderMp4}</span>
+              <div className="source-dimensions">
+                <label>
+                  <span>{copy.exportFps}</span>
+                  <input
+                    max={60}
+                    min={24}
+                    onChange={(event) =>
+                      setRenderFps(normalizeRenderExportFps(Number(event.currentTarget.value)))
+                    }
+                    step={1}
+                    type="number"
+                    value={renderFps}
+                  />
+                </label>
+                <label>
+                  <span>{copy.renderDuration}</span>
+                  <input
+                    max={30}
+                    min={1}
+                    onChange={(event) =>
+                      setRenderDuration(normalizeRenderExportDuration(Number(event.currentTarget.value)))
+                    }
+                    step={0.5}
+                    type="number"
+                    value={renderDuration}
+                  />
+                </label>
+              </div>
+              <div className="fade-mode">
+                <span>{copy.renderSize}</span>
+                <div className="source-size-mode">
+                  {renderSizeOptions.map((option) => (
+                    <button
+                      aria-pressed={renderSizePreset === option.value}
+                      disabled={renderState === 'rendering'}
+                      key={option.value}
+                      onClick={() => setRenderSizePreset(option.value)}
+                      type="button"
+                    >
+                      {copy[option.copyKey]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="source-dimensions">
+                <div className="export-status" data-state={renderState}>
+                  {renderState === 'rendering'
+                    ? `${copy.rendering} ${Math.round(renderProgress * 100)}%`
+                    : renderState === 'ready'
+                      ? copy.renderReady
+                      : renderState === 'unsupported'
+                        ? copy.renderUnsupported
+                        : renderState === 'failed'
+                          ? copy.renderFailed
+                          : `${renderFps} fps`}
+                </div>
+                <div className="export-actions">
+                  <button
+                    disabled={renderState === 'rendering'}
+                    onClick={startMp4Render}
+                    type="button"
+                  >
+                    {copy.renderMp4}
+                  </button>
+                  {renderDownloadUrl ? (
+                    <a className="export-download" download={renderFilename} href={renderDownloadUrl}>
+                      {copy.downloadMp4}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </details>
           <details className="control-group" open>
             <summary>{copy.coreOptics}</summary>

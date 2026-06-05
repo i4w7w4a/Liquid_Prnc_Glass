@@ -308,6 +308,15 @@ button {
   text-decoration: none;
 }
 
+.source-toolbar button:disabled,
+.source-size-mode button:disabled,
+.export-actions button:disabled,
+.region-presets button:disabled,
+.region-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .source-size-mode button[aria-pressed="true"],
 .region-grid button[aria-pressed="true"] {
   border-color: rgba(197, 254, 207, 0.76);
@@ -358,6 +367,25 @@ button {
   background: rgba(0, 0, 0, 0.42);
 }
 
+.export-subsection {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(197, 254, 207, 0.1);
+}
+
+.export-subsection:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.export-subsection__title {
+  color: rgba(218, 255, 226, 0.86);
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .export-status {
   display: grid;
   min-height: 29px;
@@ -371,7 +399,8 @@ button {
   text-transform: uppercase;
 }
 
-.export-status[data-state="recording"] {
+.export-status[data-state="recording"],
+.export-status[data-state="rendering"] {
   border-color: rgba(255, 90, 142, 0.5);
   color: rgba(255, 205, 221, 0.94);
   box-shadow: 0 0 16px rgba(255, 40, 100, 0.2);

@@ -182,6 +182,35 @@ Research note:
 
 - see [Canvas Recording Export](canvas-recording-export.md).
 
+## Current Task: Deterministic MP4 Render Export
+
+Status:
+
+```txt
+implemented
+```
+
+Problem:
+
+Realtime canvas recording can stutter because preview rendering and video encoding compete in the same frame budget. Lowering visual quality is not the correct primary answer.
+
+Implementation contract:
+
+- keep Preview Record as a quick draft tool;
+- add a separate MP4 Render path;
+- render frames into a hidden fixed-size WebGL canvas;
+- use the same shader renderer, not a copied effect;
+- build a deterministic frame timeline from duration and FPS;
+- encode MP4 through WebCodecs/Mediabunny;
+- expose render duration, FPS, and output size controls.
+
+Result:
+
+- `WebGLVideoEdgeGlassRenderer` supports `renderFrame(timeSeconds)` and `resizeTo(size)`;
+- `renderMp4Export()` creates a frame-by-frame MP4 export;
+- render helpers are covered by unit tests;
+- Mediabunny loads lazily only when MP4 render starts.
+
 ## Task Backlog
 
 ### 1. Shape Geometry Picker

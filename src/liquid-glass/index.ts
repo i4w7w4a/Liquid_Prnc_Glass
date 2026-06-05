@@ -1,6 +1,15 @@
 export { WebGLVideoEdgeGlass } from './WebGLVideoEdgeGlass'
 export { generateLiquidGlassIntegrationBrief } from './integrationBrief'
 export {
+  buildRenderFrameTimeline,
+  buildRenderMp4Filename,
+  normalizeRenderExportDuration,
+  normalizeRenderExportFps,
+  resolveRenderExportBitrate,
+  resolveRenderExportSize,
+} from './renderExport'
+export type { RenderExportSizePreset } from './renderExport'
+export {
   buildRecordingOptionCandidates,
   buildRecordingExportFilename,
   chooseSupportedRecordingMimeType,

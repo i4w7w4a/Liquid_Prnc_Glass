@@ -312,6 +312,20 @@ export class WebGLVideoEdgeGlassRenderer {
     this.renderer.setAnimationLoop((time) => this.render(time))
   }
 
+  renderFrame(timeSeconds: number) {
+    this.render(timeSeconds * 1000)
+  }
+
+  resizeTo(size: SourceSize) {
+    const width = Math.max(1, Math.round(size.width))
+    const height = Math.max(1, Math.round(size.height))
+
+    this.renderer.setPixelRatio(1)
+    this.renderer.setSize(width, height, false)
+    this.material.uniforms.uResolution.value.set(this.canvas.width, this.canvas.height)
+    this.material.uniforms.uSourceAspect.value = this.getSourceAspect()
+  }
+
   updateSourceNaturalSize(sourceNaturalSize: SourceSize) {
     this.sourceNaturalSize = sourceNaturalSize
     this.sourceTexture.needsUpdate = true

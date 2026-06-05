@@ -1,4 +1,4 @@
-# Canvas Recording Export
+# Export Architecture
 
 Date: 2026-06-05
 
@@ -6,27 +6,58 @@ Date: 2026-06-05
 
 Export the tuned Liquid_Prnc_Glass result as a downloadable motion file without asking another tool to rebuild the effect.
 
-The export target is the final WebGL canvas, not the raw source. This is the clean contract: if the preview shows the right optical state, recording the canvas records that same state.
+The export target is the shader-rendered result, not the raw source. This is the clean contract: if the lab settings define the right optical state, export must render that same optical state.
 
-## Decision
+## Two Export Paths
 
-Use the browser-native path:
+The lab now has two different tools because they solve different problems.
+
+### 1. Preview Record
+
+This is the browser-native realtime path:
+
 
 ```txt
 WebGL canvas -> canvas.captureStream(fps) -> MediaRecorder -> Blob -> download link
 ```
 
-This keeps the lab lightweight and avoids adding a server renderer for the first export pass.
+It is useful for quick drafts and checks. It is not the final quality path.
+
+Root weakness:
+
+```txt
+preview render + WebGL + UI + realtime encoder all compete in the same moment
+```
+
+At high canvas size or high `pixelRatio`, this can stutter because the browser must render and encode faster than time passes.
+
+### 2. MP4 Render
+
+This is the quality path:
+
+```txt
+timeline frames -> hidden fixed-size WebGL canvas -> CanvasSource -> Mediabunny MP4 output
+```
+
+It renders frame-by-frame with explicit timestamps. The file is allowed to take longer than realtime. That is the point: quality and cadence should not depend on whether the preview loop kept up.
+
+The render path uses:
+
+- the same GLSL shader;
+- the same source texture contract;
+- a fixed export size: Source, 720p, or 1080p;
+- fixed FPS and duration;
+- MP4 output through WebCodecs/Mediabunny.
 
 ## Behavior
 
-- The recording captures the current preview in real time.
-- Any live setting change during recording is captured.
-- Uploaded image sources export as motion files because the animated glass shader still renders frames.
-- Uploaded motion sources export with the glass result visible on the canvas.
-- The first implementation records visual frames only. It does not mix source audio.
+- Preview Record captures the current preview in realtime.
+- MP4 Render creates a separate hidden render canvas and writes exact frames.
+- Uploaded image sources render as motion files because the animated shader still advances over time.
+- Uploaded motion sources are sampled frame-by-frame by seeking the source.
+- The current implementation records visual frames only. It does not mix source audio.
 
-## Codec Strategy
+## Preview Record Codec Strategy
 
 Browsers differ. The lab tries formats in this order:
 
@@ -46,54 +77,65 @@ If a browser says nothing is supported, the lab still attempts `video/webm`. If 
 
 The user sees one simple action: `Record`, then `Stop`, then `Download`.
 
-## FPS And Bitrate
+## MP4 Render Timing
 
-FPS is clamped to a practical interactive range:
-
-```txt
-12..60
-```
-
-Bitrate is derived from canvas size and FPS, then clamped:
+MP4 Render builds a deterministic timeline:
 
 ```txt
-2 Mbps..20 Mbps
+frameIndex -> timestamp seconds -> shader uTime -> encoded sample
 ```
 
-This avoids tiny low-quality exports at small sizes and avoids reckless bitrate at high `pixelRatio`.
+Frame timestamps are computed in microseconds first, then passed to the canvas source in seconds. This avoids accumulated floating point drift.
+
+Render bounds:
+
+```txt
+duration: 1..30 seconds
+fps: 24..60
+```
+
+Export dimensions are forced to even numbers because video encoders expect encoder-safe frame dimensions.
 
 ## Filename
 
-The filename uses local machine time, not UTC:
+Preview Record uses:
 
 ```txt
 liquid-prnc-glass-YYYY-MM-DD-HH-mm-ss.webm
+```
+
+MP4 Render uses:
+
+```txt
+liquid-prnc-glass-render-YYYY-MM-DD-HH-mm-ss.mp4
 ```
 
 This matters because the operator judges exports by the time shown on the machine, not by UTC conversion.
 
 ## Limits
 
-- Real-time recording means a 10 second export takes 10 seconds.
-- Browser codec support determines whether the file becomes MP4 or WebM.
-- Long high-resolution exports depend on GPU and browser memory.
+- Preview Record can stutter under realtime load.
+- MP4 Render can take longer than the final clip duration.
+- MP4 Render depends on browser WebCodecs support.
+- Long high-resolution exports depend on GPU, encoder, and browser memory.
 - Audio is intentionally out of scope for this pass.
 
 ## Future Upgrade
 
-The heavier path is an offline render queue:
+The heavier next path is an offline render queue with cancellation and optional audio muxing:
 
 ```txt
 source decode -> deterministic frame stepping -> WebGL render -> encoder worker
 ```
 
-That would allow fixed-duration exports, progress bars, exact frame counts, and eventually audio muxing. It is a separate task because it changes the architecture from live preview capture to controlled rendering.
+That would allow background workers, cancellation, larger exports, and eventually source audio muxing.
 
 ## Verification
 
 Automated:
 
 - `recordingExport.test.ts` covers MIME choice, fallback options, FPS clamping, extensions, and filename generation.
+- `renderExport.test.ts` covers MP4 render duration, FPS, encoder-safe output size, frame timeline, bitrate, and filenames.
 - `npm run test` passes.
 - `npm run build` passes.
 
@@ -103,4 +145,6 @@ Browser:
 - `Stop` produces `Export ready`.
 - `Download` appears with a `blob:` URL.
 - Filename uses the local date.
-- Browser console has no warnings or errors during the smoke check.
+- `Render MP4` with a 1 second smoke duration produces `MP4 ready`.
+- `Download MP4` appears with a `blob:` URL and `.mp4` filename.
+- Browser console has no warnings or errors during the smoke checks.
