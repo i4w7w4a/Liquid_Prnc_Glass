@@ -59,13 +59,8 @@ After the repository presentation lands:
 2. Create release `v0.1.0`.
 3. Attach a short demo video only if it is optimized and rights-safe.
 
-## License Decision
+## License
 
-No license is currently committed. Until one is selected, external reuse rights are not clear.
+The repository uses the MIT License.
 
-Common choices:
-
-- MIT: simple permissive license.
-- Apache-2.0: permissive license with explicit patent language.
-
-The maintainer should choose this deliberately.
+This is a permissive open-source license: people can use, copy, modify, publish, distribute, sublicense, and sell the software as long as the license notice stays with the software.

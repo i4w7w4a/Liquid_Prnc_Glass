@@ -14,6 +14,7 @@ This project follows a human-readable changelog style.
 
 ### Repository Health
 
+- Added the MIT license for permissive public reuse.
 - Added contribution guidelines.
 - Added security policy.
 - Added code of conduct.

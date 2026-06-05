@@ -7,6 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)
 ![WebGL](https://img.shields.io/badge/WebGL-GLSL-AE9AF3)
 ![Three.js](https://img.shields.io/badge/Three.js-renderer-black)
+![License](https://img.shields.io/github/license/i4w7w4a/Liquid_Prnc_Glass)
 
 [Project site](http://liquid-prince.online/) · [GitHub repository](https://github.com/i4w7w4a/Liquid_Prnc_Glass) · [Russian overview](docs/ru/overview.ru.md)
 
@@ -236,4 +237,6 @@ type/key -> default settings -> control -> uniform -> shader usage -> tests
 
 ## License
 
-No open-source license has been selected yet. Until the maintainer chooses and commits a license, reuse rights are not granted by this repository. See [LICENSE_PENDING.md](LICENSE_PENDING.md).
+Liquid Prnc Glass is released under the [MIT License](LICENSE).
+
+You can use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the software as long as the license notice stays with the software.
