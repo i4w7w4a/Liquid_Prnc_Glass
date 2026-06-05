@@ -9,6 +9,7 @@ This project follows a human-readable changelog style.
 ### Color
 
 - Fixed the shader output color-space path so sampled source colors are written through `linearToOutputTexel` instead of raw `gl_FragColor`.
+- Fixed a shader compile regression caused by duplicating Three.js color-space parser functions in the custom fragment shader.
 - Added a compact Color panel with exposure, brightness, contrast, saturation, temperature, tint, and gamma controls.
 - Added a glowing left-rail color quick button that opens the Color panel without crowding the main control stack.
 - Extended preset parsing, formatting, tests, and integration brief export for neutral color correction defaults.
