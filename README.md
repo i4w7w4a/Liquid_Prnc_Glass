@@ -9,7 +9,7 @@
 ![Three.js](https://img.shields.io/badge/Three.js-renderer-black)
 ![License](https://img.shields.io/github/license/i4w7w4a/Liquid_Prnc_Glass)
 
-[Project site](http://liquid-prince.online/) · [GitHub repository](https://github.com/i4w7w4a/Liquid_Prnc_Glass)
+[GitHub repository](https://github.com/i4w7w4a/Liquid_Prnc_Glass) · [Latest release](https://github.com/i4w7w4a/Liquid_Prnc_Glass/releases/latest)
 
 ![Liquid Prnc Glass hero](assets/readme/hero.gif)
 
@@ -19,6 +19,18 @@
 │  edge refraction / source texture / glsl  │
 ╰────────────────────────────────────────────╯
 ```
+
+<div align="center">
+
+<a href="http://liquid-prince.online/">
+  <img alt="Open the live Liquid Prnc Glass lab" src="https://img.shields.io/badge/OPEN%20THE%20LIVE%20LAB-liquid--prince.online-9FFFCB?style=for-the-badge&labelColor=0F0E16">
+</a>
+
+**[liquid-prince.online](http://liquid-prince.online/)**
+
+`live WebGL optics lab` · `tune the shader` · `export the rendered glass`
+
+</div>
 
 > [!IMPORTANT]
 > Liquid Prnc Glass is not CSS glassmorphism, not a blur/filter overlay, and not a landing page shell.
