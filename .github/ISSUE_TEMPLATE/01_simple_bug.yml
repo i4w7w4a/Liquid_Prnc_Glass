@@ -1,0 +1,61 @@
+name: Simple bug report
+description: Describe a bug in simple words
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this if you just want to report a bug in plain language.
+        If you know the preset, browser, GPU, or exact steps, add them. If not, describe what you saw.
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: Describe the bug in simple words.
+      placeholder: |
+        Example: The screen turns black after I click Render MP4.
+    validations:
+      required: true
+
+  - type: textarea
+    id: how_to_see
+    attributes:
+      label: How can we see it?
+      description: Write the steps if you remember them. Rough steps are okay.
+      placeholder: |
+        1. Open the site
+        2. Click ...
+        3. Change ...
+        4. The bug appears
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: |
+        Example: I expected the MP4 file to download.
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or video
+      description: Drag a screenshot, GIF, or short video here if you have one.
+
+  - type: textarea
+    id: where
+    attributes:
+      label: Where did it happen?
+      placeholder: |
+        Live site or local app:
+        Browser:
+        Device / OS:
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Paste preset JSON, console errors, or notes if you have them. This is optional.

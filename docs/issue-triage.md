@@ -17,6 +17,9 @@ Open an issue when you can provide:
 
 If you cannot provide those yet, start in Discussions.
 
+If the reporter only knows that something is broken, they can use `Simple bug report`.
+That template still marks the issue as `bug` and `needs-triage`, but asks in plain language.
+
 ## Maintainer Triage Flow
 
 1. Confirm the issue uses the right template.
@@ -27,6 +30,8 @@ If you cannot provide those yet, start in Discussions.
 6. Ask for missing evidence once.
 7. Move broad questions to Discussions.
 8. Close issues that cannot be reproduced after reasonable follow-up.
+
+Simple bug reports should be treated gently. If the report has a real signal but lacks technical detail, add `needs-reproduction`, `needs-browser-info`, or `needs-preset` and ask one focused question.
 
 ## Labels
 

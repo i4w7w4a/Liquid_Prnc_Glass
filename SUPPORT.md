@@ -12,6 +12,7 @@ https://github.com/i4w7w4a/Liquid_Prnc_Glass/issues
 
 Choose the closest template:
 
+- Simple bug report;
 - Bug report;
 - Visual artifact;
 - Export problem;

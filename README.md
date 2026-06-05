@@ -246,6 +246,7 @@ type/key -> default settings -> control -> uniform -> shader usage -> tests
 ## Community
 
 - Open a [bug report](.github/ISSUE_TEMPLATE/bug_report.yml) with reproduction steps, environment, GPU/browser details, and preset JSON.
+- Use [simple bug report](.github/ISSUE_TEMPLATE/01_simple_bug.yml) when you only need to describe a bug in plain words.
 - Open a [feature request](.github/ISSUE_TEMPLATE/feature_request.yml) only when the change improves optical quality, controllability, export, portability, or maintainability.
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing renderer behavior.
 - Use [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for collaboration expectations.
