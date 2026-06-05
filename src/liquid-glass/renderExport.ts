@@ -1,6 +1,7 @@
 import type { SourceSize } from './sourceLayout'
 
 export type RenderExportSizePreset = '720p' | '1080p' | 'source'
+export type Mp4RenderAvailability = 'needs-https' | 'ready' | 'unsupported'
 
 export type RenderFrameTiming = {
   durationUs: number
@@ -112,4 +113,35 @@ export function buildRenderMp4Filename(date: Date) {
   ].join('-')
 
   return `liquid-prnc-glass-render-${stamp}.mp4`
+}
+
+export function buildRenderImageFilename(date: Date) {
+  const stamp = [
+    date.getFullYear(),
+    padTimestampPart(date.getMonth() + 1),
+    padTimestampPart(date.getDate()),
+    padTimestampPart(date.getHours()),
+    padTimestampPart(date.getMinutes()),
+    padTimestampPart(date.getSeconds()),
+  ].join('-')
+
+  return `liquid-prnc-glass-render-${stamp}.png`
+}
+
+export function getMp4RenderAvailability({
+  hasVideoEncoder,
+  isSecureContext,
+}: {
+  hasVideoEncoder: boolean
+  isSecureContext: boolean
+}): Mp4RenderAvailability {
+  if (!isSecureContext) {
+    return 'needs-https'
+  }
+
+  if (hasVideoEncoder) {
+    return 'ready'
+  }
+
+  return 'unsupported'
 }

@@ -10,7 +10,9 @@ import {
   generateLiquidGlassIntegrationBrief,
   buildRecordingExportFilename,
   chooseSupportedRecordingMimeType,
+  buildRenderImageFilename,
   buildRenderMp4Filename,
+  getMp4RenderAvailability,
   liquidGlassControls,
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
@@ -33,7 +35,7 @@ import type {
 
 type Language = 'en' | 'ru'
 type RecordingState = 'failed' | 'idle' | 'ready' | 'recording' | 'unsupported'
-type RenderExportState = 'failed' | 'idle' | 'ready' | 'rendering' | 'unsupported'
+type RenderExportState = 'failed' | 'idle' | 'needs-https' | 'ready' | 'rendering' | 'unsupported'
 type SourceFrameMode = 'manual' | 'natural' | 'viewport'
 type RenderSizeCopyKey = 'renderSize1080p' | 'renderSize720p' | 'renderSizeSource'
 type RegionKey = Extract<
@@ -111,6 +113,7 @@ const uiCopy = {
     demoSource: 'Demo',
     downloadExport: 'Download',
     downloadMp4: 'Download MP4',
+    downloadPng: 'Download PNG',
     enableField: 'Enable center-to-edge field',
     effectRegions: 'Effect regions',
     exportFailed: 'Export failed',
@@ -147,7 +150,11 @@ const uiCopy = {
     renderDuration: 'Seconds',
     renderFailed: 'Render failed',
     rendering: 'Rendering',
+    renderNeedsHttps: 'Needs HTTPS',
     renderMp4: 'Render MP4',
+    renderPng: 'Render PNG',
+    renderPngIdle: 'PNG frame',
+    renderPngReady: 'PNG ready',
     renderReady: 'MP4 ready',
     renderSize: 'Render size',
     renderSize1080p: '1080p',
@@ -177,6 +184,7 @@ const uiCopy = {
     demoSource: 'Демо',
     downloadExport: 'Скачать',
     downloadMp4: 'Скачать MP4',
+    downloadPng: 'Скачать PNG',
     enableField: 'Включить поле от центра к краю',
     effectRegions: 'Зоны эффекта',
     exportFailed: 'Ошибка экспорта',
@@ -213,7 +221,11 @@ const uiCopy = {
     renderDuration: 'Секунды',
     renderFailed: 'Ошибка рендера',
     rendering: 'Рендер',
+    renderNeedsHttps: 'Нужен HTTPS',
     renderMp4: 'Рендер MP4',
+    renderPng: 'Рендер PNG',
+    renderPngIdle: 'PNG кадр',
+    renderPngReady: 'PNG готов',
     renderReady: 'MP4 готов',
     renderSize: 'Размер рендера',
     renderSize1080p: '1080p',
@@ -489,6 +501,17 @@ function App() {
     exportCanvasRef.current = canvas
   }, [])
 
+  const clearRenderResult = () => {
+    if (renderDownloadUrl) {
+      URL.revokeObjectURL(renderDownloadUrl)
+    }
+
+    setRenderDownloadUrl(null)
+    setRenderFilename('')
+    setRenderProgress(0)
+    setRenderState('idle')
+  }
+
   const handleSettingChange = (key: LiquidGlassSettingKey, value: number) => {
     setSettings((currentSettings) => ({
       ...normalizeLiquidGlassSettings(currentSettings),
@@ -497,6 +520,7 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+    clearRenderResult()
   }
 
   const handleFieldEnabledChange = (value: boolean) => {
@@ -507,6 +531,7 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+    clearRenderResult()
   }
 
   const handleFieldFadeModeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
@@ -517,6 +542,7 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+    clearRenderResult()
   }
 
   const handleRegionToggleChange = (key: RegionKey, value: boolean) => {
@@ -532,6 +558,7 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+    clearRenderResult()
   }
 
   const handleRegionPresetChange = (edges: Record<RegionKey, boolean>) => {
@@ -548,6 +575,7 @@ function App() {
     setCopyState('idle')
     setBriefState('idle')
     setImportState('idle')
+    clearRenderResult()
   }
 
   const handleSourceNaturalSizeChange = (size: SourceSize) => {
@@ -609,6 +637,7 @@ function App() {
     setSourceFrameMode('natural')
     setCopyState('idle')
     setBriefState('idle')
+    clearRenderResult()
   }
 
   const resetSource = () => {
@@ -619,6 +648,7 @@ function App() {
     setSourceFrameSize(defaultSourceSize)
     setCopyState('idle')
     setBriefState('idle')
+    clearRenderResult()
   }
 
   const stopRecording = () => {
@@ -728,13 +758,8 @@ function App() {
     }
   }
 
-  const startMp4Render = async () => {
+  const startRenderExport = async () => {
     if (renderState === 'rendering') {
-      return
-    }
-
-    if (typeof VideoEncoder === 'undefined') {
-      setRenderState('unsupported')
       return
     }
 
@@ -744,25 +769,64 @@ function App() {
       setRenderFilename('')
     }
 
+    if (glassSource.kind === 'video') {
+      const availability = getMp4RenderAvailability({
+        hasVideoEncoder: typeof VideoEncoder !== 'undefined',
+        isSecureContext: window.isSecureContext,
+      })
+
+      if (availability !== 'ready') {
+        setRenderProgress(0)
+        setRenderState(availability)
+        return
+      }
+    }
+
     setRenderProgress(0)
     setRenderState('rendering')
 
     try {
-      const { renderMp4Export } = await import('./liquid-glass/renderMp4Export')
-      const blob = await renderMp4Export({
-        durationSeconds: renderDuration,
-        fps: renderFps,
-        onProgress: setRenderProgress,
-        settings: activeSettings,
-        sizePreset: renderSizePreset,
-        source: glassSource,
-        sourceNaturalSize,
-      })
+      const now = new Date()
+      const blob =
+        glassSource.kind === 'image'
+          ? await import('./liquid-glass/renderImageExport').then(({ renderImageExport }) =>
+              renderImageExport({
+                settings: activeSettings,
+                sizePreset: renderSizePreset,
+                source: glassSource,
+                sourceNaturalSize,
+                timeSeconds: performance.now() / 1000,
+              }),
+            )
+          : await import('./liquid-glass/renderMp4Export').then(({ renderMp4Export }) =>
+              renderMp4Export({
+                durationSeconds: renderDuration,
+                fps: renderFps,
+                onProgress: setRenderProgress,
+                settings: activeSettings,
+                sizePreset: renderSizePreset,
+                source: glassSource,
+                sourceNaturalSize,
+              }),
+            )
 
-      setRenderFilename(buildRenderMp4Filename(new Date()))
+      setRenderFilename(
+        glassSource.kind === 'image' ? buildRenderImageFilename(now) : buildRenderMp4Filename(now),
+      )
       setRenderDownloadUrl(URL.createObjectURL(blob))
       setRenderState('ready')
-    } catch {
+    } catch (error) {
+      const availability = getMp4RenderAvailability({
+        hasVideoEncoder: typeof VideoEncoder !== 'undefined',
+        isSecureContext: window.isSecureContext,
+      })
+
+      if (glassSource.kind === 'video' && availability !== 'ready') {
+        setRenderState(availability)
+        return
+      }
+
+      console.error(error)
       setRenderState('failed')
     }
   }
@@ -975,35 +1039,43 @@ function App() {
             </small>
             </div>
             <div className="export-subsection">
-              <span className="export-subsection__title">{copy.renderMp4}</span>
-              <div className="source-dimensions">
-                <label>
-                  <span>{copy.exportFps}</span>
-                  <input
-                    max={60}
-                    min={24}
-                    onChange={(event) =>
-                      setRenderFps(normalizeRenderExportFps(Number(event.currentTarget.value)))
-                    }
-                    step={1}
-                    type="number"
-                    value={renderFps}
-                  />
-                </label>
-                <label>
-                  <span>{copy.renderDuration}</span>
-                  <input
-                    max={30}
-                    min={1}
-                    onChange={(event) =>
-                      setRenderDuration(normalizeRenderExportDuration(Number(event.currentTarget.value)))
-                    }
-                    step={0.5}
-                    type="number"
-                    value={renderDuration}
-                  />
-                </label>
-              </div>
+              <span className="export-subsection__title">
+                {glassSource.kind === 'image' ? copy.renderPng : copy.renderMp4}
+              </span>
+              {glassSource.kind === 'video' ? (
+                <div className="source-dimensions">
+                  <label>
+                    <span>{copy.exportFps}</span>
+                    <input
+                      max={60}
+                      min={24}
+                      disabled={renderState === 'rendering'}
+                      onChange={(event) => {
+                        setRenderFps(normalizeRenderExportFps(Number(event.currentTarget.value)))
+                        clearRenderResult()
+                      }}
+                      step={1}
+                      type="number"
+                      value={renderFps}
+                    />
+                  </label>
+                  <label>
+                    <span>{copy.renderDuration}</span>
+                    <input
+                      max={30}
+                      min={1}
+                      disabled={renderState === 'rendering'}
+                      onChange={(event) => {
+                        setRenderDuration(normalizeRenderExportDuration(Number(event.currentTarget.value)))
+                        clearRenderResult()
+                      }}
+                      step={0.5}
+                      type="number"
+                      value={renderDuration}
+                    />
+                  </label>
+                </div>
+              ) : null}
               <div className="fade-mode">
                 <span>{copy.renderSize}</span>
                 <div className="source-size-mode">
@@ -1012,7 +1084,10 @@ function App() {
                       aria-pressed={renderSizePreset === option.value}
                       disabled={renderState === 'rendering'}
                       key={option.value}
-                      onClick={() => setRenderSizePreset(option.value)}
+                      onClick={() => {
+                        setRenderSizePreset(option.value)
+                        clearRenderResult()
+                      }}
                       type="button"
                     >
                       {copy[option.copyKey]}
@@ -1025,24 +1100,30 @@ function App() {
                   {renderState === 'rendering'
                     ? `${copy.rendering} ${Math.round(renderProgress * 100)}%`
                     : renderState === 'ready'
-                      ? copy.renderReady
+                      ? glassSource.kind === 'image'
+                        ? copy.renderPngReady
+                        : copy.renderReady
+                      : renderState === 'needs-https'
+                        ? copy.renderNeedsHttps
                       : renderState === 'unsupported'
                         ? copy.renderUnsupported
                         : renderState === 'failed'
                           ? copy.renderFailed
-                          : `${renderFps} fps`}
+                          : glassSource.kind === 'image'
+                            ? copy.renderPngIdle
+                            : `${renderFps} fps`}
                 </div>
                 <div className="export-actions">
                   <button
                     disabled={renderState === 'rendering'}
-                    onClick={startMp4Render}
+                    onClick={startRenderExport}
                     type="button"
                   >
-                    {copy.renderMp4}
+                    {glassSource.kind === 'image' ? copy.renderPng : copy.renderMp4}
                   </button>
                   {renderDownloadUrl ? (
                     <a className="export-download" download={renderFilename} href={renderDownloadUrl}>
-                      {copy.downloadMp4}
+                      {glassSource.kind === 'image' ? copy.downloadPng : copy.downloadMp4}
                     </a>
                   ) : null}
                 </div>

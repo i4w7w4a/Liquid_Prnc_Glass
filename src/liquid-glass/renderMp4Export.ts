@@ -145,7 +145,10 @@ export async function renderMp4Export({
   const canvas = createRenderCanvas(outputSize)
   const renderSource = await createRenderSource(source)
   const renderer = new WebGLVideoEdgeGlassRenderer({
+    autoResize: false,
     canvas,
+    fixedPixelRatio: 1,
+    preserveDrawingBuffer: true,
     settings,
     source: renderSource,
     sourceNaturalSize,

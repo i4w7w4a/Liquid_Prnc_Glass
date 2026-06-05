@@ -211,6 +211,13 @@ Result:
 - render helpers are covered by unit tests;
 - Mediabunny loads lazily only when MP4 render starts.
 
+Follow-up hardening:
+
+- public HTTP now reports `Needs HTTPS` for MP4 render instead of a generic unsupported state;
+- export renderers disable preview auto-resize and lock pixel ratio to `1`, so encoders receive one constant frame size;
+- manual video seeking marks `VideoTexture` dirty before every exported frame;
+- uploaded image sources use a separate `Render PNG` path with a real shader render, not a screenshot of the UI.
+
 ## Task Backlog
 
 ### 1. Shape Geometry Picker

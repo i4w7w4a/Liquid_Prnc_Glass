@@ -10,7 +10,10 @@ type VideoSourceElement = HTMLVideoElement & {
 }
 
 type RendererOptions = {
+  autoResize?: boolean
   canvas: HTMLCanvasElement
+  fixedPixelRatio?: number
+  preserveDrawingBuffer?: boolean
   settings: LiquidGlassSettings
   source: RenderSourceElement
   sourceNaturalSize?: SourceSize
@@ -202,6 +205,7 @@ export class WebGLVideoEdgeGlassRenderer {
   private readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   private readonly canvas: HTMLCanvasElement
   private disposed = false
+  private readonly fixedPixelRatio?: number
   private readonly geometry = new THREE.PlaneGeometry(2, 2)
   private readonly material: THREE.ShaderMaterial
   private readonly mesh: THREE.Mesh
@@ -214,8 +218,17 @@ export class WebGLVideoEdgeGlassRenderer {
   private videoFrameHandle: number | null = null
   private readonly sourceTexture: THREE.Texture
 
-  constructor({ canvas, settings, source, sourceNaturalSize }: RendererOptions) {
+  constructor({
+    autoResize = true,
+    canvas,
+    fixedPixelRatio,
+    preserveDrawingBuffer = false,
+    settings,
+    source,
+    sourceNaturalSize,
+  }: RendererOptions) {
     this.canvas = canvas
+    this.fixedPixelRatio = fixedPixelRatio
     this.source = source
     this.sourceNaturalSize = sourceNaturalSize
     this.settings = settings
@@ -225,6 +238,7 @@ export class WebGLVideoEdgeGlassRenderer {
       canvas,
       depth: false,
       powerPreference: 'high-performance',
+      preserveDrawingBuffer,
       stencil: false,
     })
     this.renderer.setClearColor(0x020202, 1)
@@ -269,7 +283,11 @@ export class WebGLVideoEdgeGlassRenderer {
     this.mesh = new THREE.Mesh(this.geometry, this.material)
     this.scene.add(this.mesh)
     this.resizeObserver = new ResizeObserver(() => this.resize())
-    this.resizeObserver.observe(canvas)
+
+    if (autoResize) {
+      this.resizeObserver.observe(canvas)
+    }
+
     this.updateSettings(settings)
   }
 
@@ -313,6 +331,10 @@ export class WebGLVideoEdgeGlassRenderer {
   }
 
   renderFrame(timeSeconds: number) {
+    if (this.isVideoSource(this.source)) {
+      this.sourceTexture.needsUpdate = true
+    }
+
     this.render(timeSeconds * 1000)
   }
 
@@ -374,7 +396,7 @@ export class WebGLVideoEdgeGlassRenderer {
     const rect = this.canvas.getBoundingClientRect()
     const width = Math.max(1, Math.round(rect.width))
     const height = Math.max(1, Math.round(rect.height))
-    const pixelRatio = Math.min(Math.max(this.settings.pixelRatio, 1), 3)
+    const pixelRatio = this.fixedPixelRatio ?? Math.min(Math.max(this.settings.pixelRatio, 1), 3)
     this.renderer.setPixelRatio(pixelRatio)
     this.renderer.setSize(width, height, false)
     this.material.uniforms.uResolution.value.set(this.canvas.width, this.canvas.height)

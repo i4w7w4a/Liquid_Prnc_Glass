@@ -1,8 +1,10 @@
 export { WebGLVideoEdgeGlass } from './WebGLVideoEdgeGlass'
 export { generateLiquidGlassIntegrationBrief } from './integrationBrief'
 export {
+  buildRenderImageFilename,
   buildRenderFrameTimeline,
   buildRenderMp4Filename,
+  getMp4RenderAvailability,
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
   resolveRenderExportBitrate,

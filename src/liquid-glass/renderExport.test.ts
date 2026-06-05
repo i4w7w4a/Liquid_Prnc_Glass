@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildRenderFrameTimeline,
+  buildRenderImageFilename,
   buildRenderMp4Filename,
+  getMp4RenderAvailability,
   normalizeRenderExportDuration,
   normalizeRenderExportFps,
   resolveRenderExportBitrate,
@@ -54,5 +56,24 @@ describe('render export helpers', () => {
     expect(buildRenderMp4Filename(new Date(2026, 5, 5, 2, 30, 45))).toBe(
       'liquid-prnc-glass-render-2026-06-05-02-30-45.mp4',
     )
+  })
+
+  it('builds a png filename for still image render exports', () => {
+    expect(buildRenderImageFilename(new Date(2026, 5, 5, 2, 30, 45))).toBe(
+      'liquid-prnc-glass-render-2026-06-05-02-30-45.png',
+    )
+  })
+
+  it('explains when MP4 render needs HTTPS instead of reporting a generic failure', () => {
+    expect(getMp4RenderAvailability({ hasVideoEncoder: false, isSecureContext: false })).toBe(
+      'needs-https',
+    )
+    expect(getMp4RenderAvailability({ hasVideoEncoder: true, isSecureContext: false })).toBe(
+      'needs-https',
+    )
+    expect(getMp4RenderAvailability({ hasVideoEncoder: false, isSecureContext: true })).toBe(
+      'unsupported',
+    )
+    expect(getMp4RenderAvailability({ hasVideoEncoder: true, isSecureContext: true })).toBe('ready')
   })
 })

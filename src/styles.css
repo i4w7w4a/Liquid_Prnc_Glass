@@ -412,6 +412,7 @@ button {
 }
 
 .export-status[data-state="failed"],
+.export-status[data-state="needs-https"],
 .export-status[data-state="unsupported"] {
   border-color: rgba(255, 150, 90, 0.48);
   color: rgba(255, 214, 186, 0.92);
