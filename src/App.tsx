@@ -21,6 +21,7 @@ import {
   normalizeRecordingFps,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
+  resolveControlPanelQuickAction,
   resolveRenderExportDurationFromSource,
   resizeSourceFrameWithAspect,
   resolveNaturalSourceSize,
@@ -32,6 +33,7 @@ import type {
   LiquidGlassSource,
   LiquidGlassSettingKey,
   LiquidGlassSettings,
+  ControlPanelQuickAction,
   RenderExportSizePreset,
   SourceSize,
 } from './liquid-glass'
@@ -189,7 +191,7 @@ const uiCopy = {
     copied: 'Copied',
     color: 'Color',
     colorHint: 'Neutral values preserve the source after the corrected sRGB output pass.',
-    colorQuickAction: 'Open color controls',
+    colorQuickAction: 'Open only color controls',
     currentPreset: 'Current preset',
     demoSource: 'Demo',
     downloadExport: 'Download',
@@ -223,7 +225,7 @@ const uiCopy = {
     flowLeft: 'Left',
     flowNone: 'Still',
     flowOrganicCurl: 'Curl',
-    flowQuickAction: 'Open flow controls',
+    flowQuickAction: 'Collapse all controls',
     flowRight: 'Right',
     flowShear: 'Shear',
     flowStandingWave: 'Standing',
@@ -299,7 +301,7 @@ const uiCopy = {
     copied: 'Скопировано',
     color: 'Цвет',
     colorHint: 'Нейтральные значения сохраняют исходник после исправленного sRGB-выхода.',
-    colorQuickAction: 'Открыть настройки цвета',
+    colorQuickAction: 'Открыть только настройки цвета',
     currentPreset: 'Текущий пресет',
     demoSource: 'Демо',
     downloadExport: 'Скачать',
@@ -333,7 +335,7 @@ const uiCopy = {
     flowLeft: 'Влево',
     flowNone: 'Покой',
     flowOrganicCurl: 'Вихрь',
-    flowQuickAction: 'Открыть настройки потока',
+    flowQuickAction: 'Свернуть все настройки',
     flowRight: 'Вправо',
     flowShear: 'Сдвиг',
     flowStandingWave: 'Стоячая',
@@ -807,8 +809,8 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
   const recordingStreamRef = useRef<MediaStream | null>(null)
+  const controlGroupsRef = useRef<HTMLDivElement>(null)
   const colorGroupRef = useRef<HTMLDetailsElement>(null)
-  const flowGroupRef = useRef<HTMLDetailsElement>(null)
   const sourceFileInputRef = useRef<HTMLInputElement>(null)
   const shapePickerRef = useRef<HTMLDetailsElement>(null)
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
@@ -986,14 +988,28 @@ function App() {
     clearRenderResult()
   }
 
-  const openFlowControls = () => {
-    flowGroupRef.current?.setAttribute('open', '')
-    flowGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const closeAllControlGroups = () => {
+    controlGroupsRef.current
+      ?.querySelectorAll<HTMLDetailsElement>('details.control-group')
+      .forEach((group) => {
+        group.open = false
+      })
   }
 
-  const openColorControls = () => {
-    colorGroupRef.current?.setAttribute('open', '')
-    colorGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const applyPanelQuickAction = (action: ControlPanelQuickAction) => {
+    const plan = resolveControlPanelQuickAction(action)
+
+    if (plan.collapseAll) {
+      closeAllControlGroups()
+    }
+
+    if (plan.openGroup === 'color' && colorGroupRef.current) {
+      colorGroupRef.current.open = true
+      colorGroupRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    controlGroupsRef.current?.scrollTo({ behavior: 'smooth', top: 0 })
   }
 
   const handleShapeTypeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
@@ -1372,16 +1388,16 @@ function App() {
           <button
             aria-label={copy.colorQuickAction}
             className="color-quick-button"
-            onClick={openColorControls}
+            onClick={() => applyPanelQuickAction('color-only')}
             title={copy.colorQuickAction}
             type="button"
           >
             <ColorGlyph />
           </button>
           <button
-            aria-pressed={activeSettings.flowEnabled}
+            aria-label={copy.flowQuickAction}
             className="flow-quick-button"
-            onClick={openFlowControls}
+            onClick={() => applyPanelQuickAction('collapse-all')}
             title={copy.flowQuickAction}
             type="button"
           >
@@ -1407,7 +1423,7 @@ function App() {
           </div>
           <span>{copy.subtitle}</span>
         </div>
-        <div className="control-panel__controls">
+        <div className="control-panel__controls" ref={controlGroupsRef}>
           <details className="control-group" open>
             <summary>{copy.source}</summary>
             <div className="source-toolbar">
@@ -1594,7 +1610,7 @@ function App() {
               </>
             ) : null}
           </details>
-          <details className="control-group control-group--flow" ref={flowGroupRef} open>
+          <details className="control-group control-group--flow" open>
             <summary>{copy.flow}</summary>
             <label className="field-toggle">
               <input

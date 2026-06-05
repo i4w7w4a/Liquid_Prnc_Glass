@@ -162,17 +162,6 @@ button {
     inset 0 0 0 1px rgba(250, 239, 255, 0.14);
 }
 
-.flow-quick-button[aria-pressed="true"] {
-  border-color: rgba(203, 163, 255, 0.96);
-  color: #f1e9ff;
-  background:
-    linear-gradient(180deg, rgba(170, 104, 255, 0.4), rgba(83, 31, 160, 0.48)),
-    rgba(10, 2, 22, 0.9);
-  box-shadow:
-    0 0 28px rgba(154, 87, 255, 0.46),
-    inset 0 0 0 1px rgba(244, 235, 255, 0.12);
-}
-
 .color-glyph,
 .flow-glyph {
   width: 26px;

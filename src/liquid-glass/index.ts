@@ -1,5 +1,10 @@
 export { WebGLVideoEdgeGlass } from './WebGLVideoEdgeGlass'
 export { generateLiquidGlassIntegrationBrief } from './integrationBrief'
+export { resolveControlPanelQuickAction } from './controlPanelActions'
+export type {
+  ControlPanelQuickAction,
+  ControlPanelQuickActionPlan,
+} from './controlPanelActions'
 export {
   buildRenderImageFilename,
   buildRenderFrameTimeline,
