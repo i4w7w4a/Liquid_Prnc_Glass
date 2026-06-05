@@ -9,7 +9,7 @@
 ![Three.js](https://img.shields.io/badge/Three.js-renderer-black)
 ![License](https://img.shields.io/github/license/i4w7w4a/Liquid_Prnc_Glass)
 
-[Project site](http://liquid-prince.online/) · [GitHub repository](https://github.com/i4w7w4a/Liquid_Prnc_Glass) · [Russian overview](docs/ru/overview.ru.md)
+[Project site](http://liquid-prince.online/) · [GitHub repository](https://github.com/i4w7w4a/Liquid_Prnc_Glass)
 
 ![Liquid Prnc Glass hero](assets/readme/hero.gif)
 
