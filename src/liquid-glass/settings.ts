@@ -5,6 +5,13 @@ export type LiquidGlassSettingKey =
   | 'dispersion'
   | 'edgeDarkening'
   | 'highlightStrength'
+  | 'exposure'
+  | 'brightness'
+  | 'contrast'
+  | 'saturation'
+  | 'temperature'
+  | 'tint'
+  | 'gamma'
   | 'fieldStart'
   | 'fieldSoftness'
   | 'fieldCurve'
@@ -39,7 +46,7 @@ export type LiquidGlassControl = {
   label: string
   max: number
   min: number
-  section: 'core' | 'field' | 'flow' | 'geometry' | 'region'
+  section: 'color' | 'core' | 'field' | 'flow' | 'geometry' | 'region'
   step: number
 }
 
@@ -58,6 +65,13 @@ const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
   'fieldSoftness',
   'fieldCurve',
   'fieldStrength',
+  'exposure',
+  'brightness',
+  'contrast',
+  'saturation',
+  'temperature',
+  'tint',
+  'gamma',
   'shapeWarp',
   'flowSpeed',
   'flowStrength',
@@ -91,6 +105,13 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   dispersion: 0.018,
   edgeDarkening: 0.34,
   highlightStrength: 0.72,
+  exposure: 0,
+  brightness: 0,
+  contrast: 1,
+  saturation: 1,
+  temperature: 0,
+  tint: 0,
+  gamma: 1,
   fieldStart: 0.22,
   fieldSoftness: 0.42,
   fieldFadeMode: 0,
@@ -170,6 +191,69 @@ export const liquidGlassControls: LiquidGlassControl[] = [
     step: 0.01,
     section: 'core',
     help: 'Rim, lower lip and sweep highlight intensity.',
+  },
+  {
+    key: 'exposure',
+    label: 'Exposure',
+    min: -2,
+    max: 2,
+    step: 0.01,
+    section: 'color',
+    help: 'EV-style gain applied after optical composition. 0 preserves the source.',
+  },
+  {
+    key: 'brightness',
+    label: 'Brightness',
+    min: -1,
+    max: 1,
+    step: 0.01,
+    section: 'color',
+    help: 'Linear lift for the whole rendered source. Keep subtle for uploaded media.',
+  },
+  {
+    key: 'contrast',
+    label: 'Contrast',
+    min: 0,
+    max: 2,
+    step: 0.01,
+    section: 'color',
+    help: 'Midpoint contrast around neutral 0.5. 1 preserves the source.',
+  },
+  {
+    key: 'saturation',
+    label: 'Saturation',
+    min: 0,
+    max: 2,
+    step: 0.01,
+    section: 'color',
+    help: 'Luma-based color intensity. 1 preserves the source.',
+  },
+  {
+    key: 'temperature',
+    label: 'Temperature',
+    min: -1,
+    max: 1,
+    step: 0.01,
+    section: 'color',
+    help: 'Warm or cool bias applied as a controlled color balance.',
+  },
+  {
+    key: 'tint',
+    label: 'Tint',
+    min: -1,
+    max: 1,
+    step: 0.01,
+    section: 'color',
+    help: 'Green-magenta balance for fine source matching.',
+  },
+  {
+    key: 'gamma',
+    label: 'Gamma',
+    min: 0.4,
+    max: 2.4,
+    step: 0.01,
+    section: 'color',
+    help: 'Display-style tonal curve. 1 preserves the source.',
   },
   {
     key: 'fieldStart',
@@ -300,6 +384,12 @@ export const liquidGlassControls: LiquidGlassControl[] = [
 ]
 
 export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number) {
+  if (key === 'exposure' || key === 'brightness' || key === 'temperature' || key === 'tint') {
+    const prefix = value > 0 ? '+' : ''
+
+    return `${prefix}${value.toFixed(2)}`
+  }
+
   if (
     key === 'edgeThickness' ||
     key === 'cornerRadius' ||

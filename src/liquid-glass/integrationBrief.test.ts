@@ -9,6 +9,13 @@ const tunedPreset: LiquidGlassSettings = {
   dispersion: 0.046,
   edgeDarkening: 0.48,
   highlightStrength: 0.53,
+  exposure: 0.18,
+  brightness: -0.04,
+  contrast: 1.08,
+  saturation: 0.92,
+  temperature: 0.12,
+  tint: -0.06,
+  gamma: 1.04,
   fieldStart: 0.42,
   fieldSoftness: 0.42,
   fieldFadeMode: 0,
@@ -44,8 +51,11 @@ describe('integration brief export', () => {
     expect(brief).toContain('"fieldFadeMode": 0')
     expect(brief).toContain('"shapeType": 8')
     expect(brief).toContain('"flowMode": 9')
+    expect(brief).toContain('"contrast": 1.08')
     expect(brief).toContain('Shape geometry')
     expect(brief).toContain('Flow field')
+    expect(brief).toContain('Color correction')
+    expect(brief).toContain('linearToOutputTexel')
     expect(brief).toContain('flowGradient')
     expect(brief).toContain('normal/gradient')
     expect(brief).toContain('shapeDistance')

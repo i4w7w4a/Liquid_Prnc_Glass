@@ -41,6 +41,13 @@ uniform float uCornerRadius;
 uniform float uDispersion;
 uniform float uEdgeDarkening;
 uniform float uHighlightStrength;
+uniform float uExposure;
+uniform float uBrightness;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uTemperature;
+uniform float uTint;
+uniform float uGamma;
 uniform float uFieldEnabled;
 uniform float uFieldStart;
 uniform float uFieldSoftness;
@@ -62,6 +69,8 @@ uniform float uFlowBoundaryDamping;
 uniform float uFlowLayerMix;
 
 varying vec2 vUv;
+
+#include <colorspace_pars_fragment>
 
 float sdRoundedBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + vec2(r);
@@ -282,6 +291,29 @@ vec3 sampleDispersedSource(vec2 uv, vec2 refractOffset, float chroma) {
   return color;
 }
 
+vec3 applyColorGrade(vec3 color) {
+  color = max(color, vec3(0.0));
+  color *= exp2(clamp(uExposure, -2.0, 2.0));
+  color += vec3(clamp(uBrightness, -1.0, 1.0));
+  color = (color - 0.5) * clamp(uContrast, 0.0, 2.0) + 0.5;
+
+  float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  color = mix(vec3(luma), color, clamp(uSaturation, 0.0, 2.0));
+
+  float temperature = clamp(uTemperature, -1.0, 1.0);
+  float tint = clamp(uTint, -1.0, 1.0);
+  color += vec3(temperature * 0.055, tint * 0.045, -temperature * 0.055);
+
+  color = max(color, vec3(0.0));
+  color = pow(color, vec3(1.0 / clamp(uGamma, 0.4, 2.4)));
+
+  return clamp(color, 0.0, 1.0);
+}
+
+void writeOutputColor(vec3 color) {
+  gl_FragColor = linearToOutputTexel(vec4(applyColorGrade(color), 1.0));
+}
+
 float smootherstep01(float x) {
   x = clamp(x, 0.0, 1.0);
   return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
@@ -363,12 +395,12 @@ void main() {
     opticalColor += highlightColor * highlight;
     opticalColor += vec3(chroma * 0.62, chroma * 0.12, chroma * 1.0) * edgeMask * masterFade;
 
-    gl_FragColor = vec4(mix(baseColor, opticalColor, masterFade), 1.0);
+    writeOutputColor(mix(baseColor, opticalColor, masterFade));
     return;
   }
 
   if (d < -0.001) {
-    gl_FragColor = vec4(sampleSource(vUv), 1.0);
+    writeOutputColor(sampleSource(vUv));
     return;
   }
 
@@ -397,7 +429,7 @@ void main() {
   color += highlightColor * highlight;
   color += vec3(chroma * 0.9, chroma * 0.18, chroma * 1.35) * borderMask * bevel;
 
-  gl_FragColor = vec4(color, 1.0);
+  writeOutputColor(color);
 }
 `
 
@@ -455,6 +487,13 @@ export class WebGLVideoEdgeGlassRenderer {
         uCornerRadius: { value: settings.cornerRadius },
         uDispersion: { value: settings.dispersion },
         uEdgeDarkening: { value: settings.edgeDarkening },
+        uExposure: { value: settings.exposure },
+        uBrightness: { value: settings.brightness },
+        uContrast: { value: settings.contrast },
+        uSaturation: { value: settings.saturation },
+        uTemperature: { value: settings.temperature },
+        uTint: { value: settings.tint },
+        uGamma: { value: settings.gamma },
         uFieldCurve: { value: settings.fieldCurve },
         uFieldEnabled: { value: settings.fieldEnabled ? 1 : 0 },
         uFieldFadeMode: { value: settings.fieldFadeMode },
@@ -571,6 +610,13 @@ export class WebGLVideoEdgeGlassRenderer {
     this.material.uniforms.uCornerRadius.value = settings.cornerRadius
     this.material.uniforms.uDispersion.value = settings.dispersion
     this.material.uniforms.uEdgeDarkening.value = settings.edgeDarkening
+    this.material.uniforms.uExposure.value = settings.exposure
+    this.material.uniforms.uBrightness.value = settings.brightness
+    this.material.uniforms.uContrast.value = settings.contrast
+    this.material.uniforms.uSaturation.value = settings.saturation
+    this.material.uniforms.uTemperature.value = settings.temperature
+    this.material.uniforms.uTint.value = settings.tint
+    this.material.uniforms.uGamma.value = settings.gamma
     this.material.uniforms.uFieldCurve.value = settings.fieldCurve
     this.material.uniforms.uFieldEnabled.value = settings.fieldEnabled ? 1 : 0
     this.material.uniforms.uFieldFadeMode.value = settings.fieldFadeMode

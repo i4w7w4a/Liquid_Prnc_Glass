@@ -82,10 +82,15 @@ ${settings.shapeType} - ${shapeLabel}; shapeWarp ${settings.shapeWarp}
 Flow field:
 ${settings.flowEnabled ? 'enabled' : 'disabled'}; mode ${settings.flowMode} - ${flowModeLabel}; speed ${settings.flowSpeed}; strength ${settings.flowStrength}; scale ${settings.flowScale}; turbulence ${settings.flowTurbulence}; boundary damping ${settings.flowBoundaryDamping}; layer mix ${settings.flowLayerMix}
 
+Color correction:
+exposure ${settings.exposure}; brightness ${settings.brightness}; contrast ${settings.contrast}; saturation ${settings.saturation}; temperature ${settings.temperature}; tint ${settings.tint}; gamma ${settings.gamma}
+
 Core contract:
 - центр остается чистым, эффект появляется постепенно к краям;
 - жесткая линия старта недопустима;
 - IOR signed: 0 означает чистый исходник, плюс и минус меняют направление преломления;
+- source texture должен читаться в рабочем color space, а итоговый цвет должен выходить через linearToOutputTexel;
+- color correction применяется после optical composition и до output color-space conversion;
 - refraction, dispersion, darkening и highlights должны гаситься общей masterFade;
 - shapeType должен менять реальный SDF / signed field, а не только UI icon;
 - shapeDistance(p) должен давать границу формы, а нормаль должна вычисляться по central differences;
@@ -172,6 +177,7 @@ Final composition rule:
 
 \`\`\`glsl
 finalColor = mix(baseColor, opticalColor, masterFade);
+gl_FragColor = linearToOutputTexel(vec4(applyColorGrade(finalColor), 1.0));
 \`\`\`
 
 Acceptance:

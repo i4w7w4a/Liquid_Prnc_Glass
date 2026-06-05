@@ -89,6 +89,7 @@ type ShapeIconKind =
   | 'wave'
 
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
+const colorControls = liquidGlassControls.filter((control) => control.section === 'color')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
 const flowControls = liquidGlassControls.filter((control) => control.section === 'flow')
 const primaryFlowControlKeys: LiquidGlassSettingKey[] = ['flowSpeed', 'flowStrength', 'flowScale']
@@ -184,6 +185,9 @@ const uiCopy = {
     briefCopied: 'Brief copied',
     copy: 'Copy',
     copied: 'Copied',
+    color: 'Color',
+    colorHint: 'Neutral values preserve the source after the corrected sRGB output pass.',
+    colorQuickAction: 'Open color controls',
     currentPreset: 'Current preset',
     demoSource: 'Demo',
     downloadExport: 'Download',
@@ -233,6 +237,7 @@ const uiCopy = {
     manualSize: 'Manual',
     naturalSize: 'Natural',
     preset: 'Preset',
+    quickControls: 'Quick controls',
     regionAll: 'All',
     regionBottom: 'Bottom',
     regionBottomOnly: 'Bottom',
@@ -288,6 +293,9 @@ const uiCopy = {
     briefCopied: 'ТЗ скопировано',
     copy: 'Копия',
     copied: 'Скопировано',
+    color: 'Цвет',
+    colorHint: 'Нейтральные значения сохраняют исходник после исправленного sRGB-выхода.',
+    colorQuickAction: 'Открыть настройки цвета',
     currentPreset: 'Текущий пресет',
     demoSource: 'Демо',
     downloadExport: 'Скачать',
@@ -337,6 +345,7 @@ const uiCopy = {
     manualSize: 'Вручную',
     naturalSize: 'Натуральный',
     preset: 'Пресет',
+    quickControls: 'Быстрые настройки',
     regionAll: 'Все',
     regionBottom: 'Низ',
     regionBottomOnly: 'Низ',
@@ -395,7 +404,7 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
     },
     ru: {
       label: 'IOR',
-      help: 'Подписанная оптическая сила. 0 - чистое видео; минус разворачивает преломление.',
+      help: 'Подписанная оптическая сила. 0 - чистый исходник; минус разворачивает преломление.',
     },
   },
   edgeThickness: {
@@ -446,6 +455,76 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
     ru: {
       label: 'Сила блика',
       help: 'Интенсивность обода, нижней кромки и скользящего блика.',
+    },
+  },
+  exposure: {
+    en: {
+      label: 'Exposure',
+      help: 'EV-style gain after optical composition. 0 preserves the source.',
+    },
+    ru: {
+      label: 'Экспозиция',
+      help: 'EV-усиление после оптической сборки. 0 сохраняет исходник.',
+    },
+  },
+  brightness: {
+    en: {
+      label: 'Brightness',
+      help: 'Linear lift for the rendered source. Use small values for matching.',
+    },
+    ru: {
+      label: 'Яркость',
+      help: 'Линейный подъем яркости всего исходника. Для подгонки держи малые значения.',
+    },
+  },
+  contrast: {
+    en: {
+      label: 'Contrast',
+      help: 'Midpoint contrast around neutral 0.5. 1 preserves the source.',
+    },
+    ru: {
+      label: 'Контраст',
+      help: 'Контраст вокруг средней точки 0.5. 1 сохраняет исходник.',
+    },
+  },
+  saturation: {
+    en: {
+      label: 'Saturation',
+      help: 'Luma-based color intensity. 1 preserves the source.',
+    },
+    ru: {
+      label: 'Насыщенность',
+      help: 'Интенсивность цвета через luma-смешивание. 1 сохраняет исходник.',
+    },
+  },
+  temperature: {
+    en: {
+      label: 'Temperature',
+      help: 'Warm-cool balance for matching the source mood.',
+    },
+    ru: {
+      label: 'Температура',
+      help: 'Баланс теплее-холоднее для подстройки настроения исходника.',
+    },
+  },
+  tint: {
+    en: {
+      label: 'Tint',
+      help: 'Green-magenta balance for fine source correction.',
+    },
+    ru: {
+      label: 'Оттенок',
+      help: 'Баланс зеленый-магента для тонкой коррекции исходника.',
+    },
+  },
+  gamma: {
+    en: {
+      label: 'Gamma',
+      help: 'Tonal curve applied before output color-space conversion. 1 is neutral.',
+    },
+    ru: {
+      label: 'Гамма',
+      help: 'Тональная кривая перед выходным color-space conversion. 1 нейтрально.',
     },
   },
   fieldStart: {
@@ -620,6 +699,23 @@ function ShapeIcon({ icon }: { icon: ShapeIconKind }) {
   )
 }
 
+function ColorGlyph() {
+  return (
+    <svg aria-hidden="true" className="color-glyph" focusable="false" viewBox="0 0 48 48">
+      <path d="M24 6v8" />
+      <path d="M24 34v8" />
+      <path d="M6 24h8" />
+      <path d="M34 24h8" />
+      <path d="M11.6 11.6l5.7 5.7" />
+      <path d="M30.7 30.7l5.7 5.7" />
+      <path d="M36.4 11.6l-5.7 5.7" />
+      <path d="M17.3 30.7l-5.7 5.7" />
+      <circle cx="24" cy="24" r="7.5" />
+      <path d="M20 24h8" />
+    </svg>
+  )
+}
+
 function FlowGlyph() {
   return (
     <svg aria-hidden="true" className="flow-glyph" focusable="false" viewBox="0 0 48 48">
@@ -704,6 +800,7 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
   const recordingStreamRef = useRef<MediaStream | null>(null)
+  const colorGroupRef = useRef<HTMLDetailsElement>(null)
   const flowGroupRef = useRef<HTMLDetailsElement>(null)
   const sourceFileInputRef = useRef<HTMLInputElement>(null)
   const shapePickerRef = useRef<HTMLDetailsElement>(null)
@@ -884,6 +981,11 @@ function App() {
   const openFlowControls = () => {
     flowGroupRef.current?.setAttribute('open', '')
     flowGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const openColorControls = () => {
+    colorGroupRef.current?.setAttribute('open', '')
+    colorGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const handleShapeTypeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
@@ -1241,7 +1343,16 @@ function App() {
         />
       </section>
       <aside className="control-panel" aria-label="Glass controls">
-        <div className="control-panel__rail" aria-label={copy.flowQuickAction}>
+        <div className="control-panel__rail" aria-label={copy.quickControls}>
+          <button
+            aria-label={copy.colorQuickAction}
+            className="color-quick-button"
+            onClick={openColorControls}
+            title={copy.colorQuickAction}
+            type="button"
+          >
+            <ColorGlyph />
+          </button>
           <button
             aria-pressed={activeSettings.flowEnabled}
             className="flow-quick-button"
@@ -1352,6 +1463,41 @@ function App() {
                 />
               </label>
             </div>
+          </details>
+          <details className="control-group control-group--color" ref={colorGroupRef}>
+            <summary>{copy.color}</summary>
+            <small className="field-toggle__hint">
+              {copy.colorHint}
+            </small>
+            {colorControls.map((control) => {
+              const inputId = `glass-${control.key}`
+              const text = controlCopy[control.key][language]
+
+              return (
+                <div className="glass-control" key={control.key}>
+                  <span className="glass-control__row">
+                    <label htmlFor={inputId} title={text.help}>
+                      {text.label}
+                    </label>
+                    <output aria-hidden="true" htmlFor={inputId}>
+                      {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                    </output>
+                  </span>
+                  <input
+                    id={inputId}
+                    max={control.max}
+                    min={control.min}
+                    onChange={(event) =>
+                      handleSettingChange(control.key, Number(event.currentTarget.value))
+                    }
+                    step={control.step}
+                    type="range"
+                    value={activeSettings[control.key]}
+                  />
+                  <small>{text.help}</small>
+                </div>
+              )
+            })}
           </details>
           <details className="control-group" open>
             <summary>{copy.geometry}</summary>

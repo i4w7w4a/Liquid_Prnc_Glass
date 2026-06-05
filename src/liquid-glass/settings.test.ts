@@ -16,6 +16,7 @@ describe('liquid glass settings', () => {
   it('serializes presets as readable JSON', () => {
     expect(serializeLiquidGlassPreset(defaultLiquidGlassSettings)).toContain('"ior": 1.22')
     expect(serializeLiquidGlassPreset(defaultLiquidGlassSettings)).toContain('"pixelRatio": 2')
+    expect(serializeLiquidGlassPreset(defaultLiquidGlassSettings)).toContain('"contrast": 1')
   })
 
   it('keeps the center-to-edge field disabled by default', () => {
@@ -43,8 +44,28 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.flowLayerMix).toBe(0.55)
   })
 
+  it('keeps color correction neutral by default', () => {
+    expect(defaultLiquidGlassSettings.exposure).toBe(0)
+    expect(defaultLiquidGlassSettings.brightness).toBe(0)
+    expect(defaultLiquidGlassSettings.contrast).toBe(1)
+    expect(defaultLiquidGlassSettings.saturation).toBe(1)
+    expect(defaultLiquidGlassSettings.temperature).toBe(0)
+    expect(defaultLiquidGlassSettings.tint).toBe(0)
+    expect(defaultLiquidGlassSettings.gamma).toBe(1)
+  })
+
   it('formats signed IOR values', () => {
     expect(formatLiquidGlassValue('ior', -0.65)).toBe('-0.65')
+  })
+
+  it('formats signed color correction values', () => {
+    expect(formatLiquidGlassValue('exposure', 0.35)).toBe('+0.35')
+    expect(formatLiquidGlassValue('brightness', -0.12)).toBe('-0.12')
+    expect(formatLiquidGlassValue('temperature', 0.25)).toBe('+0.25')
+    expect(formatLiquidGlassValue('tint', -0.3)).toBe('-0.30')
+    expect(formatLiquidGlassValue('contrast', 1.08)).toBe('1.08')
+    expect(formatLiquidGlassValue('saturation', 0.94)).toBe('0.94')
+    expect(formatLiquidGlassValue('gamma', 1.1)).toBe('1.10')
   })
 
   it('parses a complete preset from JSON', () => {
@@ -88,6 +109,13 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.flowTurbulence).toBe(defaultLiquidGlassSettings.flowTurbulence)
     expect(parsedPreset.flowBoundaryDamping).toBe(defaultLiquidGlassSettings.flowBoundaryDamping)
     expect(parsedPreset.flowLayerMix).toBe(defaultLiquidGlassSettings.flowLayerMix)
+    expect(parsedPreset.exposure).toBe(defaultLiquidGlassSettings.exposure)
+    expect(parsedPreset.brightness).toBe(defaultLiquidGlassSettings.brightness)
+    expect(parsedPreset.contrast).toBe(defaultLiquidGlassSettings.contrast)
+    expect(parsedPreset.saturation).toBe(defaultLiquidGlassSettings.saturation)
+    expect(parsedPreset.temperature).toBe(defaultLiquidGlassSettings.temperature)
+    expect(parsedPreset.tint).toBe(defaultLiquidGlassSettings.tint)
+    expect(parsedPreset.gamma).toBe(defaultLiquidGlassSettings.gamma)
   })
 
   it('normalizes persisted settings with missing field controls', () => {
@@ -118,6 +146,13 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.flowTurbulence).toBe(defaultLiquidGlassSettings.flowTurbulence)
     expect(normalizedSettings.flowBoundaryDamping).toBe(defaultLiquidGlassSettings.flowBoundaryDamping)
     expect(normalizedSettings.flowLayerMix).toBe(defaultLiquidGlassSettings.flowLayerMix)
+    expect(normalizedSettings.exposure).toBe(defaultLiquidGlassSettings.exposure)
+    expect(normalizedSettings.brightness).toBe(defaultLiquidGlassSettings.brightness)
+    expect(normalizedSettings.contrast).toBe(defaultLiquidGlassSettings.contrast)
+    expect(normalizedSettings.saturation).toBe(defaultLiquidGlassSettings.saturation)
+    expect(normalizedSettings.temperature).toBe(defaultLiquidGlassSettings.temperature)
+    expect(normalizedSettings.tint).toBe(defaultLiquidGlassSettings.tint)
+    expect(normalizedSettings.gamma).toBe(defaultLiquidGlassSettings.gamma)
   })
 
   it('parses signed IOR values', () => {
@@ -247,6 +282,29 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.flowLayerMix).toBe(0.41)
   })
 
+  it('parses color correction controls', () => {
+    const parsedPreset = parseLiquidGlassPreset(
+      JSON.stringify({
+        ...defaultLiquidGlassSettings,
+        exposure: 0.35,
+        brightness: -0.08,
+        contrast: 1.18,
+        saturation: 0.86,
+        temperature: 0.24,
+        tint: -0.16,
+        gamma: 1.12,
+      }),
+    )
+
+    expect(parsedPreset.exposure).toBe(0.35)
+    expect(parsedPreset.brightness).toBe(-0.08)
+    expect(parsedPreset.contrast).toBe(1.18)
+    expect(parsedPreset.saturation).toBe(0.86)
+    expect(parsedPreset.temperature).toBe(0.24)
+    expect(parsedPreset.tint).toBe(-0.16)
+    expect(parsedPreset.gamma).toBe(1.12)
+  })
+
   it('rejects invalid flow field controls', () => {
     expect(() =>
       parseLiquidGlassPreset(
@@ -274,6 +332,35 @@ describe('liquid glass settings', () => {
         }),
       ),
     ).toThrow('Invalid setting: flowEnabled')
+  })
+
+  it('rejects invalid color correction controls', () => {
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          contrast: 3,
+        }),
+      ),
+    ).toThrow('Setting out of range: contrast')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          gamma: 0.1,
+        }),
+      ),
+    ).toThrow('Setting out of range: gamma')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          saturation: -0.1,
+        }),
+      ),
+    ).toThrow('Setting out of range: saturation')
   })
 
   it('rejects invalid side region controls', () => {
