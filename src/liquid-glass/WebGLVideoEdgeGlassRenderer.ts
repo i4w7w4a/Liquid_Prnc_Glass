@@ -50,12 +50,113 @@ uniform float uFieldStrength;
 uniform vec4 uRegionEdges;
 uniform float uRegionWidth;
 uniform float uRegionSoftness;
+uniform float uShapeType;
+uniform float uShapeWarp;
 
 varying vec2 vUv;
 
 float sdRoundedBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + vec2(r);
   return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
+}
+
+float sdEllipse(vec2 p, vec2 ab) {
+  p = abs(p);
+  ab = max(ab, vec2(0.001));
+  float k0 = length(p / ab);
+  float k1 = length(p / (ab * ab));
+  return k0 * (k0 - 1.0) / max(k1, 0.001);
+}
+
+float sdDiamond(vec2 p, float r) {
+  p = abs(p);
+  return (p.x + p.y - r) * 0.70710678;
+}
+
+float sdEquilateralTriangle(vec2 p, float r) {
+  const float k = 1.7320508;
+  p.x = abs(p.x) - r;
+  p.y = p.y + r / k;
+
+  if (p.x + k * p.y > 0.0) {
+    p = vec2(p.x - k * p.y, -k * p.x - p.y) / 2.0;
+  }
+
+  p.x -= clamp(p.x, -2.0 * r, 0.0);
+  return -length(p) * sign(p.y);
+}
+
+float sdHexagon(vec2 p, float r) {
+  const vec3 k = vec3(-0.8660254, 0.5, 0.5773503);
+  p = abs(p);
+  p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+  p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+  return length(p) * sign(p.y);
+}
+
+float stableAngularWarp(vec2 p, float seed) {
+  float angle = atan(p.y, p.x);
+  return
+    sin(angle * 3.0 + seed) * 0.52 +
+    sin(angle * 5.0 - seed * 1.7) * 0.28 +
+    sin(angle * 9.0 + seed * 0.6) * 0.16;
+}
+
+float shapeDistance(vec2 p, vec2 innerSize, float radius) {
+  float shapeType = floor(uShapeType + 0.5);
+  float warp = clamp(uShapeWarp, 0.0, 1.0);
+  float baseRadius = max(0.001, min(innerSize.x, innerSize.y));
+  float warpScale = baseRadius * 0.105 * warp;
+
+  if (shapeType < 0.5) {
+    return sdRoundedBox(p, innerSize, radius);
+  }
+
+  if (shapeType < 1.5) {
+    return length(p) - baseRadius;
+  }
+
+  if (shapeType < 2.5) {
+    return sdEllipse(p, innerSize);
+  }
+
+  if (shapeType < 3.5) {
+    return sdDiamond(p, baseRadius * 1.28);
+  }
+
+  if (shapeType < 4.5) {
+    return sdEquilateralTriangle(p + vec2(0.0, baseRadius * 0.12), baseRadius * 1.2);
+  }
+
+  if (shapeType < 5.5) {
+    return sdHexagon(p, baseRadius * 1.02);
+  }
+
+  if (shapeType < 6.5) {
+    return sdEllipse(p, innerSize * vec2(0.92, 0.96)) +
+      stableAngularWarp(p, 0.4) * warpScale;
+  }
+
+  if (shapeType < 7.5) {
+    float capsule = sdRoundedBox(p, vec2(innerSize.x * 0.88, innerSize.y * 0.56), innerSize.y * 0.46);
+    float wave = sin(p.x * 12.0 + sin(p.y * 3.0) * 0.8) * warpScale * 1.05;
+    return capsule + wave;
+  }
+
+  if (shapeType < 8.5) {
+    float chipped = sdRoundedBox(p, innerSize * vec2(0.96, 0.9), max(0.0, radius * 0.45));
+    float chip = stableAngularWarp(p, 2.15) * warpScale * 1.25;
+    return chipped + floor(chip / max(warpScale * 0.32, 0.001)) * warpScale * 0.32;
+  }
+
+  if (shapeType < 9.5) {
+    float angle = atan(p.y, p.x);
+    float petal = cos(angle * 2.0) * warpScale * 1.45;
+    return sdEllipse(p, innerSize * vec2(0.78, 1.02)) - petal;
+  }
+
+  return sdEllipse(p, innerSize * vec2(0.9, 0.98)) +
+    stableAngularWarp(p, 4.2) * warpScale * 1.35;
 }
 
 vec2 coverUv(vec2 uv) {
@@ -122,7 +223,7 @@ void main() {
   float thickness = clamp(uBorderThickness, 0.001, 0.32);
   float radius = clamp(uCornerRadius, 0.0, 0.34);
   vec2 innerSize = vec2(max(0.001, 0.5 * aspect - thickness * aspect), max(0.001, 0.5 - thickness));
-  float d = sdRoundedBox(p, innerSize, radius);
+  float d = shapeDistance(p, innerSize, radius);
   float chroma = clamp(uDispersion, 0.0, 0.12);
   vec2 lightDirection = normalize(vec2(-0.46, -0.89));
   float regionMask = effectRegionMask(vUv);
@@ -174,8 +275,8 @@ void main() {
   }
 
   vec2 eps = vec2(0.0015, 0.0);
-  float dX = sdRoundedBox(p + eps.xy, innerSize, radius) - sdRoundedBox(p - eps.xy, innerSize, radius);
-  float dY = sdRoundedBox(p + eps.yx, innerSize, radius) - sdRoundedBox(p - eps.yx, innerSize, radius);
+  float dX = shapeDistance(p + eps.xy, innerSize, radius) - shapeDistance(p - eps.xy, innerSize, radius);
+  float dY = shapeDistance(p + eps.yx, innerSize, radius) - shapeDistance(p - eps.yx, innerSize, radius);
   vec2 grad = vec2(dX, dY);
   vec2 normal = length(grad) > 0.00001 ? normalize(grad) : vec2(0.0);
 
@@ -273,6 +374,8 @@ export class WebGLVideoEdgeGlassRenderer {
         },
         uRegionSoftness: { value: settings.regionSoftness },
         uRegionWidth: { value: settings.regionWidth },
+        uShapeType: { value: settings.shapeType },
+        uShapeWarp: { value: settings.shapeWarp },
         uResolution: { value: new THREE.Vector2(1, 1) },
         uTime: { value: 0 },
         uSourceAspect: { value: 16 / 9 },
@@ -376,6 +479,8 @@ export class WebGLVideoEdgeGlassRenderer {
     )
     this.material.uniforms.uRegionSoftness.value = settings.regionSoftness
     this.material.uniforms.uRegionWidth.value = settings.regionWidth
+    this.material.uniforms.uShapeType.value = settings.shapeType
+    this.material.uniforms.uShapeWarp.value = settings.shapeWarp
     this.resize()
   }
 

@@ -225,7 +225,7 @@ Follow-up hardening:
 Status:
 
 ```txt
-planned
+implemented
 ```
 
 Add a compact shape selector with icon buttons inside a dropdown.
@@ -253,6 +253,14 @@ Implementation notes:
 - icons must preview the silhouette;
 - shape selection must be serializable in presets;
 - irregular shapes should be deterministic first, then animated only if the flow mode needs it.
+
+Result:
+
+- added `shapeType` and `shapeWarp` to the preset contract;
+- added a compact Geometry picker with icon previews;
+- edge mode now uses `shapeDistance()` instead of a single rounded-box SDF;
+- regular and irregular silhouettes share the same central-difference normal path;
+- irregular shapes use deterministic edge variation only.
 
 ### 2. Flow Field Controls
 

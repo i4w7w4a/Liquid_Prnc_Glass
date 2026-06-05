@@ -51,7 +51,7 @@ Meaning:
 
 ## Edge Mode
 
-Edge mode uses a rounded-box signed distance field:
+Edge mode uses a selectable signed distance field. The default remains a rounded rectangle:
 
 ```glsl
 float sdRoundedBox(vec2 p, vec2 b, float r) {
@@ -60,7 +60,32 @@ float sdRoundedBox(vec2 p, vec2 b, float r) {
 }
 ```
 
-The SDF boundary creates the refractive band and provides a normal by finite difference sampling.
+The active shape is routed through:
+
+```glsl
+float shapeDistance(vec2 p, vec2 innerSize, float radius);
+```
+
+The SDF boundary creates the refractive band and provides a normal by finite difference sampling. Shape icons in the UI are only previews; `shapeType` must change the shader-side signed field.
+
+Regular shapes:
+
+- rounded rectangle;
+- circle;
+- ellipse;
+- diamond;
+- triangle;
+- hexagon.
+
+Irregular shapes:
+
+- soft blob;
+- wave capsule;
+- chipped frame;
+- petal lens;
+- torn oval.
+
+Irregular shapes use stable deterministic edge variation through `shapeWarp`. They must not animate until flow controls are explicitly added.
 
 ## Center-To-Edge Field
 

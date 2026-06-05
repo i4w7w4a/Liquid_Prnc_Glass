@@ -20,6 +20,8 @@ const tunedPreset: LiquidGlassSettings = {
   regionLeft: true,
   regionWidth: 0.34,
   regionSoftness: 0.12,
+  shapeType: 8,
+  shapeWarp: 0.62,
   pixelRatio: 2.25,
   fieldEnabled: true,
 }
@@ -32,6 +34,9 @@ describe('integration brief export', () => {
     expect(brief).toContain('http://liquid-prince.online/')
     expect(brief).toContain('"ior": -1.84')
     expect(brief).toContain('"fieldFadeMode": 0')
+    expect(brief).toContain('"shapeType": 8')
+    expect(brief).toContain('Shape geometry')
+    expect(brief).toContain('shapeDistance')
     expect(brief).toContain('float signedOpticalPower(float ior)')
     expect(brief).toContain('finalColor = mix(baseColor, opticalColor, masterFade)')
     expect(brief).toContain('объект')

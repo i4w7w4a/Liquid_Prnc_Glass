@@ -9,6 +9,7 @@ export type LiquidGlassSettingKey =
   | 'fieldSoftness'
   | 'fieldCurve'
   | 'fieldStrength'
+  | 'shapeWarp'
   | 'regionWidth'
   | 'regionSoftness'
   | 'pixelRatio'
@@ -19,7 +20,7 @@ export type LiquidGlassBooleanSettingKey =
   | 'regionRight'
   | 'regionBottom'
   | 'regionLeft'
-export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode'
+export type LiquidGlassDiscreteSettingKey = 'fieldFadeMode' | 'shapeType'
 
 export type LiquidGlassSettings = Record<LiquidGlassSettingKey, number> &
   Record<LiquidGlassDiscreteSettingKey, number> &
@@ -31,7 +32,7 @@ export type LiquidGlassControl = {
   label: string
   max: number
   min: number
-  section: 'core' | 'field' | 'region'
+  section: 'core' | 'field' | 'geometry' | 'region'
   step: number
 }
 
@@ -50,6 +51,7 @@ const optionalLiquidGlassSettingKeys: LiquidGlassSettingKey[] = [
   'fieldSoftness',
   'fieldCurve',
   'fieldStrength',
+  'shapeWarp',
   'regionWidth',
   'regionSoftness',
 ]
@@ -61,7 +63,11 @@ const liquidGlassBooleanSettingKeys: LiquidGlassBooleanSettingKey[] = [
   'regionBottom',
   'regionLeft',
 ]
-const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode']
+const liquidGlassDiscreteSettingKeys: LiquidGlassDiscreteSettingKey[] = ['fieldFadeMode', 'shapeType']
+const liquidGlassDiscreteSettingBounds: Record<LiquidGlassDiscreteSettingKey, { max: number; min: number }> = {
+  fieldFadeMode: { min: 0, max: 1 },
+  shapeType: { min: 0, max: 10 },
+}
 
 export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   ior: 1.22,
@@ -75,6 +81,8 @@ export const defaultLiquidGlassSettings: LiquidGlassSettings = {
   fieldFadeMode: 0,
   fieldCurve: 2.4,
   fieldStrength: 1,
+  shapeType: 0,
+  shapeWarp: 0.35,
   regionTop: true,
   regionRight: true,
   regionBottom: true,
@@ -177,6 +185,15 @@ export const liquidGlassControls: LiquidGlassControl[] = [
     help: 'Multiplier for full-frame center-to-edge refraction.',
   },
   {
+    key: 'shapeWarp',
+    label: 'Shape warp',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    section: 'geometry',
+    help: 'Strength of deterministic edge irregularity for organic shapes.',
+  },
+  {
     key: 'pixelRatio',
     label: 'Pixel ratio',
     min: 1,
@@ -211,6 +228,7 @@ export function formatLiquidGlassValue(key: LiquidGlassSettingKey, value: number
     key === 'cornerRadius' ||
     key === 'fieldStart' ||
     key === 'fieldSoftness' ||
+    key === 'shapeWarp' ||
     key === 'regionWidth' ||
     key === 'regionSoftness'
   ) {
@@ -299,7 +317,9 @@ export function parseLiquidGlassPreset(rawPreset: string): LiquidGlassSettings {
       throw new Error(`Invalid setting: ${key}`)
     }
 
-    if (value < 0 || value > 1) {
+    const bounds = liquidGlassDiscreteSettingBounds[key]
+
+    if (value < bounds.min || value > bounds.max) {
       throw new Error(`Setting out of range: ${key}`)
     }
 

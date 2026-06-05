@@ -12,24 +12,9 @@ The working roadmap lives in [Lab Roadmap](lab-roadmap.md). This page is the pub
 - Effect regions for top, right, bottom, and left strips.
 - Preview recording through MediaRecorder.
 - Deterministic MP4 render export through WebCodecs/Mediabunny.
+- Shape geometry picker with regular and irregular SDF silhouettes.
 
 ## Planned
-
-### Shape Geometry Picker
-
-Add selectable optical silhouettes backed by real SDF or signed-field logic:
-
-- rounded rectangle;
-- circle;
-- ellipse;
-- diamond;
-- triangle;
-- hexagon;
-- soft blob;
-- wave capsule;
-- chipped frame;
-- petal lens;
-- torn oval.
 
 ### Flow Field Controls
 

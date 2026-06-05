@@ -8,9 +8,28 @@ function getFadeModeLabel(fieldFadeMode: number) {
   return fieldFadeMode === 1 ? 'source dissolve' : 'optical mask'
 }
 
+function getShapeLabel(shapeType: number) {
+  const labels = [
+    'rounded rectangle',
+    'circle',
+    'ellipse',
+    'diamond',
+    'triangle',
+    'hexagon',
+    'soft blob',
+    'wave capsule',
+    'chipped frame',
+    'petal lens',
+    'torn oval',
+  ]
+
+  return labels[shapeType] ?? 'rounded rectangle'
+}
+
 export function generateLiquidGlassIntegrationBrief(settings: LiquidGlassSettings) {
   const presetJson = serializeLiquidGlassPreset(settings)
   const fadeModeLabel = getFadeModeLabel(settings.fieldFadeMode)
+  const shapeLabel = getShapeLabel(settings.shapeType)
 
   return `# Liquid_Prnc_Glass integration brief
 
@@ -37,11 +56,16 @@ ${presetJson}
 Current fade mode:
 ${settings.fieldFadeMode} - ${fadeModeLabel}
 
+Shape geometry:
+${settings.shapeType} - ${shapeLabel}; shapeWarp ${settings.shapeWarp}
+
 Core contract:
 - центр остается чистым, эффект появляется постепенно к краям;
 - жесткая линия старта недопустима;
 - IOR signed: 0 означает чистый исходник, плюс и минус меняют направление преломления;
 - refraction, dispersion, darkening и highlights должны гаситься общей masterFade;
+- shapeType должен менять реальный SDF / signed field, а не только UI icon;
+- shapeDistance(p) должен давать границу формы, а нормаль должна вычисляться по central differences;
 - нельзя оставлять chroma, highlight или darkening вне final fade.
 
 Signed IOR:

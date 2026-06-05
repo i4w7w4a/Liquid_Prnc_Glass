@@ -50,9 +50,34 @@ type RegionPresetCopyKey =
   | 'regionSides'
   | 'regionTopBottom'
   | 'regionTopOnly'
+type ShapeCopyKey =
+  | 'shapeBlob'
+  | 'shapeChipped'
+  | 'shapeCircle'
+  | 'shapeDiamond'
+  | 'shapeEllipse'
+  | 'shapeHexagon'
+  | 'shapePetal'
+  | 'shapeRect'
+  | 'shapeTorn'
+  | 'shapeTriangle'
+  | 'shapeWave'
+type ShapeIconKind =
+  | 'blob'
+  | 'chipped'
+  | 'circle'
+  | 'diamond'
+  | 'ellipse'
+  | 'hexagon'
+  | 'petal'
+  | 'rect'
+  | 'torn'
+  | 'triangle'
+  | 'wave'
 
 const coreControls = liquidGlassControls.filter((control) => control.section === 'core')
 const fieldControls = liquidGlassControls.filter((control) => control.section === 'field')
+const geometryControls = liquidGlassControls.filter((control) => control.section === 'geometry')
 const regionControls = liquidGlassControls.filter((control) => control.section === 'region')
 const defaultSourceSize: SourceSize = { width: 1280, height: 720 }
 const defaultGlassSource: LiquidGlassSource = {
@@ -101,6 +126,24 @@ const regionPresetOptions = [
     edges: { regionTop: false, regionRight: false, regionBottom: true, regionLeft: false },
   },
 ] satisfies { copyKey: RegionPresetCopyKey; edges: Record<RegionKey, boolean> }[]
+const shapeOptions = [
+  { value: 0, copyKey: 'shapeRect', icon: 'rect', irregular: false },
+  { value: 1, copyKey: 'shapeCircle', icon: 'circle', irregular: false },
+  { value: 2, copyKey: 'shapeEllipse', icon: 'ellipse', irregular: false },
+  { value: 3, copyKey: 'shapeDiamond', icon: 'diamond', irregular: false },
+  { value: 4, copyKey: 'shapeTriangle', icon: 'triangle', irregular: false },
+  { value: 5, copyKey: 'shapeHexagon', icon: 'hexagon', irregular: false },
+  { value: 6, copyKey: 'shapeBlob', icon: 'blob', irregular: true },
+  { value: 7, copyKey: 'shapeWave', icon: 'wave', irregular: true },
+  { value: 8, copyKey: 'shapeChipped', icon: 'chipped', irregular: true },
+  { value: 9, copyKey: 'shapePetal', icon: 'petal', irregular: true },
+  { value: 10, copyKey: 'shapeTorn', icon: 'torn', irregular: true },
+] satisfies {
+  copyKey: ShapeCopyKey
+  icon: ShapeIconKind
+  irregular: boolean
+  value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]
+}[]
 
 const uiCopy = {
   en: {
@@ -131,6 +174,7 @@ const uiCopy = {
     fieldHidden: 'Field controls are hidden until enabled.',
     fieldHint: 'The center stays clean; refraction dissolves into the source by curve.',
     failed: 'Failed',
+    geometry: 'Geometry',
     import: 'Import',
     imported: 'Imported',
     integrationBrief: 'Integration brief',
@@ -170,6 +214,19 @@ const uiCopy = {
     sourceKindImage: 'Image',
     sourceKindVideo: 'Motion',
     sourceSize: 'Source size',
+    shapeBlob: 'Soft blob',
+    shapeChipped: 'Chipped frame',
+    shapeCircle: 'Circle',
+    shapeDiamond: 'Diamond',
+    shapeEllipse: 'Ellipse',
+    shapeHexagon: 'Hexagon',
+    shapePetal: 'Petal lens',
+    shapePicker: 'Shape',
+    shapeRect: 'Rounded rect',
+    shapeTorn: 'Torn oval',
+    shapeTriangle: 'Triangle',
+    shapeWarpHint: 'Irregular shapes use stable edge variation; flow comes later.',
+    shapeWave: 'Wave capsule',
     subtitle: 'WebGL / SourceTexture / SDF / GLSL',
     uploadSource: 'Upload',
     viewportSize: 'Viewport',
@@ -202,6 +259,7 @@ const uiCopy = {
     fieldHidden: 'Настройки поля скрыты, пока режим выключен.',
     fieldHint: 'Центр остается чистым; преломление растворяется в исходнике по кривой.',
     failed: 'Ошибка',
+    geometry: 'Геометрия',
     import: 'Импорт',
     imported: 'Импортировано',
     integrationBrief: 'ТЗ для агента',
@@ -241,6 +299,19 @@ const uiCopy = {
     sourceKindImage: 'Изображение',
     sourceKindVideo: 'Движение',
     sourceSize: 'Размер исходника',
+    shapeBlob: 'Мягкий blob',
+    shapeChipped: 'Сколотая рамка',
+    shapeCircle: 'Круг',
+    shapeDiamond: 'Ромб',
+    shapeEllipse: 'Эллипс',
+    shapeHexagon: 'Шестиугольник',
+    shapePetal: 'Лепесток',
+    shapePicker: 'Форма',
+    shapeRect: 'Скругленный квадрат',
+    shapeTorn: 'Рваный овал',
+    shapeTriangle: 'Треугольник',
+    shapeWarpHint: 'Неровные формы стабильны по краю; текучесть добавим отдельно.',
+    shapeWave: 'Волновая капсула',
     subtitle: 'WebGL / SourceTexture / SDF / GLSL',
     uploadSource: 'Загрузить',
     viewportSize: 'Экран',
@@ -348,6 +419,16 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
       help: 'Множитель преломления от центра к краям всего кадра.',
     },
   },
+  shapeWarp: {
+    en: {
+      label: 'Shape warp',
+      help: 'Stable edge irregularity for organic silhouettes.',
+    },
+    ru: {
+      label: 'Неровность формы',
+      help: 'Стабильная неровность края для органических силуэтов.',
+    },
+  },
   pixelRatio: {
     en: {
       label: 'Pixel ratio',
@@ -378,6 +459,36 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
       help: 'Растушевка внутренней границы выбранных полос.',
     },
   },
+}
+
+function ShapeIcon({ icon }: { icon: ShapeIconKind }) {
+  return (
+    <svg aria-hidden="true" className="shape-icon" focusable="false" viewBox="0 0 48 48">
+      {icon === 'rect' ? (
+        <path d="M11 9h26c1.1 0 2 .9 2 2v26c0 1.1-.9 2-2 2H11c-1.1 0-2-.9-2-2V11c0-1.1.9-2 2-2Z" />
+      ) : icon === 'circle' ? (
+        <circle cx="24" cy="24" r="16" />
+      ) : icon === 'ellipse' ? (
+        <ellipse cx="24" cy="24" rx="18" ry="12" />
+      ) : icon === 'diamond' ? (
+        <path d="M24 6 42 24 24 42 6 24 24 6Z" />
+      ) : icon === 'triangle' ? (
+        <path d="M24 7 42 39H6L24 7Z" />
+      ) : icon === 'hexagon' ? (
+        <path d="M15 8h18l10 16-10 16H15L5 24 15 8Z" />
+      ) : icon === 'blob' ? (
+        <path d="M14 10c7-6 21-2 25 7 5 10-2 22-13 24-10 2-20-4-22-13-2-8 3-14 10-18Z" />
+      ) : icon === 'wave' ? (
+        <path d="M9 17c4-7 14-7 20-3 5 3 9 2 12-1 2 8-1 18-9 21-7 4-14-1-20 1-4 1-6 3-7 5-2-8 0-17 4-23Z" />
+      ) : icon === 'chipped' ? (
+        <path d="M9 9h16l3 5 5-5h6v15l-4 3 4 5v7H24l-4-4-5 4H9V27l5-3-5-4V9Z" />
+      ) : icon === 'petal' ? (
+        <path d="M24 7c12 7 17 17 12 26-5 8-19 8-24 0C7 24 12 14 24 7Z" />
+      ) : (
+        <path d="M14 9c9-5 23 0 26 9 2 7-2 10-1 16-7 5-19 8-27 2-7-5-9-15-4-22 2-2 3-3 6-5Z" />
+      )}
+    </svg>
+  )
 }
 
 function App() {
@@ -413,7 +524,12 @@ function App() {
   const recordingChunksRef = useRef<BlobPart[]>([])
   const recordingStreamRef = useRef<MediaStream | null>(null)
   const sourceFileInputRef = useRef<HTMLInputElement>(null)
+  const shapePickerRef = useRef<HTMLDetailsElement>(null)
   const activeSettings = useMemo(() => normalizeLiquidGlassSettings(settings), [settings])
+  const activeShape = useMemo(
+    () => shapeOptions.find((option) => option.value === activeSettings.shapeType) ?? shapeOptions[0],
+    [activeSettings.shapeType],
+  )
   const presetJson = useMemo(() => serializeLiquidGlassPreset(activeSettings), [activeSettings])
   const integrationBrief = useMemo(
     () => generateLiquidGlassIntegrationBrief(activeSettings),
@@ -558,6 +674,18 @@ function App() {
     setBriefState('idle')
     setImportState('idle')
     clearRenderResult()
+  }
+
+  const handleShapeTypeChange = (value: LiquidGlassSettings[LiquidGlassDiscreteSettingKey]) => {
+    setSettings((currentSettings) => ({
+      ...normalizeLiquidGlassSettings(currentSettings),
+      shapeType: value,
+    }))
+    setCopyState('idle')
+    setBriefState('idle')
+    setImportState('idle')
+    clearRenderResult()
+    shapePickerRef.current?.removeAttribute('open')
   }
 
   const handleRegionToggleChange = (key: RegionKey, value: boolean) => {
@@ -1003,6 +1131,68 @@ function App() {
                 />
               </label>
             </div>
+          </details>
+          <details className="control-group" open>
+            <summary>{copy.geometry}</summary>
+            <div className="shape-field">
+              <span>{copy.shapePicker}</span>
+              <details className="shape-picker" ref={shapePickerRef}>
+                <summary>
+                  <ShapeIcon icon={activeShape.icon} />
+                  <span>{copy[activeShape.copyKey]}</span>
+                </summary>
+                <div className="shape-picker__menu">
+                  {shapeOptions.map((option) => (
+                    <button
+                      aria-pressed={activeSettings.shapeType === option.value}
+                      key={option.value}
+                      onClick={() => handleShapeTypeChange(option.value)}
+                      title={copy[option.copyKey]}
+                      type="button"
+                    >
+                      <ShapeIcon icon={option.icon} />
+                      <span>{copy[option.copyKey]}</span>
+                    </button>
+                  ))}
+                </div>
+              </details>
+            </div>
+            {activeShape.irregular ? (
+              <>
+                <small className="field-toggle__hint">
+                  {copy.shapeWarpHint}
+                </small>
+                {geometryControls.map((control) => {
+                  const inputId = `glass-${control.key}`
+                  const text = controlCopy[control.key][language]
+
+                  return (
+                    <div className="glass-control" key={control.key}>
+                      <span className="glass-control__row">
+                        <label htmlFor={inputId} title={text.help}>
+                          {text.label}
+                        </label>
+                        <output aria-hidden="true" htmlFor={inputId}>
+                          {formatLiquidGlassValue(control.key, activeSettings[control.key])}
+                        </output>
+                      </span>
+                      <input
+                        id={inputId}
+                        max={control.max}
+                        min={control.min}
+                        onChange={(event) =>
+                          handleSettingChange(control.key, Number(event.currentTarget.value))
+                        }
+                        step={control.step}
+                        type="range"
+                        value={activeSettings[control.key]}
+                      />
+                      <small>{text.help}</small>
+                    </div>
+                  )
+                })}
+              </>
+            ) : null}
           </details>
           <details className="control-group" open>
             <summary>{copy.exportResult}</summary>

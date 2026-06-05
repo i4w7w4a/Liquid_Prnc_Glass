@@ -31,6 +31,8 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.regionLeft).toBe(true)
     expect(defaultLiquidGlassSettings.regionWidth).toBe(1)
     expect(defaultLiquidGlassSettings.regionSoftness).toBe(0.12)
+    expect(defaultLiquidGlassSettings.shapeType).toBe(0)
+    expect(defaultLiquidGlassSettings.shapeWarp).toBe(0.35)
   })
 
   it('formats signed IOR values', () => {
@@ -68,6 +70,8 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.regionLeft).toBe(defaultLiquidGlassSettings.regionLeft)
     expect(parsedPreset.regionWidth).toBe(defaultLiquidGlassSettings.regionWidth)
     expect(parsedPreset.regionSoftness).toBe(defaultLiquidGlassSettings.regionSoftness)
+    expect(parsedPreset.shapeType).toBe(defaultLiquidGlassSettings.shapeType)
+    expect(parsedPreset.shapeWarp).toBe(defaultLiquidGlassSettings.shapeWarp)
   })
 
   it('normalizes persisted settings with missing field controls', () => {
@@ -88,6 +92,8 @@ describe('liquid glass settings', () => {
     expect(normalizedSettings.fieldFadeMode).toBe(defaultLiquidGlassSettings.fieldFadeMode)
     expect(normalizedSettings.regionTop).toBe(defaultLiquidGlassSettings.regionTop)
     expect(normalizedSettings.regionWidth).toBe(defaultLiquidGlassSettings.regionWidth)
+    expect(normalizedSettings.shapeType).toBe(defaultLiquidGlassSettings.shapeType)
+    expect(normalizedSettings.shapeWarp).toBe(defaultLiquidGlassSettings.shapeWarp)
   })
 
   it('parses signed IOR values', () => {
@@ -157,6 +163,39 @@ describe('liquid glass settings', () => {
     expect(parsedPreset.regionLeft).toBe(false)
     expect(parsedPreset.regionWidth).toBe(0.32)
     expect(parsedPreset.regionSoftness).toBe(0.18)
+  })
+
+  it('parses shape geometry controls', () => {
+    const parsedPreset = parseLiquidGlassPreset(
+      JSON.stringify({
+        ...defaultLiquidGlassSettings,
+        shapeType: 7,
+        shapeWarp: 0.62,
+      }),
+    )
+
+    expect(parsedPreset.shapeType).toBe(7)
+    expect(parsedPreset.shapeWarp).toBe(0.62)
+  })
+
+  it('rejects invalid shape geometry controls', () => {
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          shapeType: 11,
+        }),
+      ),
+    ).toThrow('Setting out of range: shapeType')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          shapeWarp: 2,
+        }),
+      ),
+    ).toThrow('Setting out of range: shapeWarp')
   })
 
   it('rejects invalid side region controls', () => {

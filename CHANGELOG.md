@@ -6,6 +6,12 @@ This project follows a human-readable changelog style.
 
 ## Unreleased
 
+### Geometry
+
+- Added a shape geometry picker with icon previews for six regular and five irregular optical silhouettes.
+- Moved edge-mode refraction from one rounded-box SDF to selectable shader-side shape distance fields.
+- Added `shapeType` and `shapeWarp` preset controls with legacy preset defaults.
+
 ### Export
 
 - Set MP4 render duration from motion source metadata by default while keeping the seconds field editable.
