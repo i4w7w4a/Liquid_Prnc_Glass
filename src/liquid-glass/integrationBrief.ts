@@ -90,6 +90,7 @@ Core contract:
 - жесткая линия старта недопустима;
 - IOR signed: 0 означает чистый исходник, плюс и минус меняют направление преломления;
 - source texture должен читаться в рабочем color space, а итоговый цвет должен выходить через linearToOutputTexel;
+- moving media texture без аппаратного sRGB unpack должен декодироваться перед optical math через sRGBTransferEOTF;
 - color correction применяется после optical composition и до output color-space conversion;
 - refraction, dispersion, darkening и highlights должны гаситься общей masterFade;
 - shapeType должен менять реальный SDF / signed field, а не только UI icon;
@@ -163,6 +164,13 @@ float pull =
   * (0.055 + thickness * 0.38);
 
 vec2 refractOffset = opticalNormal * pull / aspectCorrection;
+\`\`\`
+
+Source sampling:
+
+\`\`\`glsl
+vec4 texel = texture2D(uSourceTexture, clamp(coverUv(vUv), vec2(0.001), vec2(0.999)));
+vec3 sourceColor = uDecodeSourceTexture > 0.5 ? sRGBTransferEOTF(texel).rgb : texel.rgb;
 \`\`\`
 
 Dispersion sampling:

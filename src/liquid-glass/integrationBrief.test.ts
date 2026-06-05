@@ -56,6 +56,7 @@ describe('integration brief export', () => {
     expect(brief).toContain('Flow field')
     expect(brief).toContain('Color correction')
     expect(brief).toContain('linearToOutputTexel')
+    expect(brief).toContain('sRGBTransferEOTF')
     expect(brief).toContain('flowGradient')
     expect(brief).toContain('normal/gradient')
     expect(brief).toContain('shapeDistance')

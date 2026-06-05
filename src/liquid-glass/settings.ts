@@ -204,11 +204,11 @@ export const liquidGlassControls: LiquidGlassControl[] = [
   {
     key: 'brightness',
     label: 'Brightness',
-    min: -1,
-    max: 1,
-    step: 0.01,
+    min: -0.25,
+    max: 0.25,
+    step: 0.005,
     section: 'color',
-    help: 'Linear lift for the whole rendered source. Keep subtle for uploaded media.',
+    help: 'Fine linear lift for source matching. Wide crush/blowout extremes are intentionally removed.',
   },
   {
     key: 'contrast',

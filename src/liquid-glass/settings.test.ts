@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   defaultLiquidGlassSettings,
   formatLiquidGlassValue,
+  liquidGlassControls,
   normalizeLiquidGlassSettings,
   parseLiquidGlassPreset,
   serializeLiquidGlassPreset,
@@ -52,6 +53,16 @@ describe('liquid glass settings', () => {
     expect(defaultLiquidGlassSettings.temperature).toBe(0)
     expect(defaultLiquidGlassSettings.tint).toBe(0)
     expect(defaultLiquidGlassSettings.gamma).toBe(1)
+  })
+
+  it('keeps brightness adjustment in a subtle tuning range', () => {
+    const brightnessControl = liquidGlassControls.find((control) => control.key === 'brightness')
+
+    expect(brightnessControl).toMatchObject({
+      min: -0.25,
+      max: 0.25,
+      step: 0.005,
+    })
   })
 
   it('formats signed IOR values', () => {
@@ -361,6 +372,15 @@ describe('liquid glass settings', () => {
         }),
       ),
     ).toThrow('Setting out of range: saturation')
+
+    expect(() =>
+      parseLiquidGlassPreset(
+        JSON.stringify({
+          ...defaultLiquidGlassSettings,
+          brightness: 0.4,
+        }),
+      ),
+    ).toThrow('Setting out of range: brightness')
   })
 
   it('rejects invalid side region controls', () => {

@@ -478,11 +478,11 @@ const controlCopy: Record<LiquidGlassSettingKey, Record<Language, { help: string
   brightness: {
     en: {
       label: 'Brightness',
-      help: 'Linear lift for the rendered source. Use small values for matching.',
+      help: 'Fine linear lift for source matching. Extremes are removed for softer tuning.',
     },
     ru: {
       label: 'Яркость',
-      help: 'Линейный подъем яркости всего исходника. Для подгонки держи малые значения.',
+      help: 'Тонкий линейный подъем для подгонки исходника. Крайние значения убраны.',
     },
   },
   contrast: {

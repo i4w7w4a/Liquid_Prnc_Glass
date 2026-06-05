@@ -32,6 +32,7 @@ const fragmentShader = `
 precision highp float;
 
 uniform sampler2D uSourceTexture;
+uniform float uDecodeSourceTexture;
 uniform vec2 uResolution;
 uniform float uSourceAspect;
 uniform float uTime;
@@ -278,7 +279,13 @@ vec2 coverUv(vec2 uv) {
 }
 
 vec3 sampleSource(vec2 uv) {
-  return texture2D(uSourceTexture, clamp(coverUv(uv), vec2(0.001), vec2(0.999))).rgb;
+  vec4 texel = texture2D(uSourceTexture, clamp(coverUv(uv), vec2(0.001), vec2(0.999)));
+
+  if (uDecodeSourceTexture > 0.5) {
+    return sRGBTransferEOTF(texel).rgb;
+  }
+
+  return texel.rgb;
 }
 
 vec3 sampleDispersedSource(vec2 uv, vec2 refractOffset, float chroma) {
@@ -292,7 +299,7 @@ vec3 sampleDispersedSource(vec2 uv, vec2 refractOffset, float chroma) {
 vec3 applyColorGrade(vec3 color) {
   color = max(color, vec3(0.0));
   color *= exp2(clamp(uExposure, -2.0, 2.0));
-  color += vec3(clamp(uBrightness, -1.0, 1.0));
+  color += vec3(clamp(uBrightness, -0.25, 0.25));
   color = (color - 0.5) * clamp(uContrast, 0.0, 2.0) + 0.5;
 
   float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
@@ -522,6 +529,7 @@ export class WebGLVideoEdgeGlassRenderer {
         uShapeWarp: { value: settings.shapeWarp },
         uResolution: { value: new THREE.Vector2(1, 1) },
         uTime: { value: 0 },
+        uDecodeSourceTexture: { value: this.isVideoSource(source) ? 1 : 0 },
         uSourceAspect: { value: 16 / 9 },
         uSourceTexture: { value: this.sourceTexture },
       },
